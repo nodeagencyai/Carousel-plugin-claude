@@ -92,34 +92,38 @@ let cleanContent = content
   .replace(/<style>[\s\S]*?<\/style>/gi, '');
 
 // ---------------------------------------------------------------------------
-// Step 3 — Remove black background rectangles
+// Step 3 — Aggressively remove ALL background rectangles
 // ---------------------------------------------------------------------------
+// Gemini ALWAYS adds background rects despite instructions not to.
+// They can be: black, dark, light, beige, cream, white — any color.
+// They can be full-canvas (1080x1350) or slightly smaller (1000x1200).
+// Strategy: remove ANY rect that is "large enough to be a background".
 
-function removeBlackRects(svgStr) {
-  // Remove full-canvas dark/black rects that Gemini frequently adds.
-  // Since attribute order varies, we match all <rect> tags individually and
-  // test each for (a) black fill AND (b) large width+height.
-  const blackFillRe = /fill=["'](?:#0{3,6}|black|rgb\(0,\s*0,\s*0\))["']/i;
+function removeBackgroundRects(svgStr) {
   const widthRe = /width=["'](\d+(?:\.\d+)?)["']/i;
   const heightRe = /height=["'](\d+(?:\.\d+)?)["']/i;
+  const rxRe = /rx=["'](\d+(?:\.\d+)?)["']/i;
 
   svgStr = svgStr.replace(/<rect[^>]*\/?\s*>/gi, (tag) => {
-    const hasBlackFill = blackFillRe.test(tag);
     const wMatch = tag.match(widthRe);
     const hMatch = tag.match(heightRe);
-    if (
-      hasBlackFill &&
-      wMatch && parseFloat(wMatch[1]) >= 1000 &&
-      hMatch && parseFloat(hMatch[1]) >= 1000
-    ) {
-      return ''; // Strip it
-    }
+    const w = wMatch ? parseFloat(wMatch[1]) : 0;
+    const h = hMatch ? parseFloat(hMatch[1]) : 0;
+
+    // Remove any rect that covers most of the canvas (background)
+    // Threshold: width >= 800 AND height >= 1000 (catches Gemini's slightly-smaller bg rects)
+    if (w >= 800 && h >= 1000) return '';
+
+    // Also remove full-width rects that span the entire slide width
+    // (Gemini sometimes makes slightly shorter but full-width backgrounds)
+    if (w >= 1000 && h >= 800) return '';
+
     return tag;
   });
   return svgStr;
 }
 
-cleanContent = removeBlackRects(cleanContent);
+cleanContent = removeBackgroundRects(cleanContent);
 
 // ---------------------------------------------------------------------------
 // Step 3b — Escape unescaped ampersands (breaks XML parsing)
@@ -285,59 +289,6 @@ function fixSafeZone(svgStr, brandProfile) {
 }
 
 cleanContent = fixSafeZone(cleanContent, brand);
-
-// ---------------------------------------------------------------------------
-// Step 4b — Full-canvas rect removal (dark fills, light fills, oversized)
-// ---------------------------------------------------------------------------
-
-function removeFullCanvasRects(svgStr) {
-  const widthRe = /width=["'](\d+(?:\.\d+)?)["']/i;
-  const heightRe = /height=["'](\d+(?:\.\d+)?)["']/i;
-  const fillRe = /fill=["']([^"']+)["']/i;
-
-  function isDarkFill(fill) {
-    if (!fill) return false;
-    const hex = fill.replace(/^#/, '');
-    if (!/^[0-9a-f]{6}$/i.test(hex)) return false;
-    const r = parseInt(hex.slice(0, 2), 16);
-    const g = parseInt(hex.slice(2, 4), 16);
-    const b = parseInt(hex.slice(4, 6), 16);
-    return r < 0x30 && g < 0x30 && b < 0x30;
-  }
-
-  function isLightFill(fill) {
-    if (!fill) return false;
-    const lower = fill.toLowerCase().trim();
-    if (lower === 'white' || lower === '#ffffff' || lower === '#fff' || lower === '#f5f5f5') return true;
-    const hex = fill.replace(/^#/, '');
-    if (!/^[0-9a-f]{6}$/i.test(hex)) return false;
-    const r = parseInt(hex.slice(0, 2), 16);
-    const g = parseInt(hex.slice(2, 4), 16);
-    const b = parseInt(hex.slice(4, 6), 16);
-    return r >= 0xF0 && g >= 0xF0 && b >= 0xF0;
-  }
-
-  svgStr = svgStr.replace(/<rect[^>]*\/?\s*>/gi, (tag) => {
-    const wMatch = tag.match(widthRe);
-    const hMatch = tag.match(heightRe);
-    const fillMatch = tag.match(fillRe);
-    const w = wMatch ? parseFloat(wMatch[1]) : 0;
-    const h = hMatch ? parseFloat(hMatch[1]) : 0;
-    const fill = fillMatch ? fillMatch[1] : '';
-
-    // Remove any rect that covers the full canvas
-    if (w >= 1000 && h >= 1300) return '';
-    // Remove dark-fill large rects (background is in the wrapper)
-    if (isDarkFill(fill) && w >= 1000 && h >= 1000) return '';
-    // Remove light-fill large rects
-    if (isLightFill(fill) && w >= 1000 && h >= 1000) return '';
-
-    return tag;
-  });
-  return svgStr;
-}
-
-cleanContent = removeFullCanvasRects(cleanContent);
 
 // ---------------------------------------------------------------------------
 // Step 4c — Gradient overuse reduction
