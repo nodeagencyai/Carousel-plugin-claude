@@ -473,8 +473,49 @@ function buildFinalSvg(innerContent, brandProfile, slideNum) {
     .join('\n');
 
   // --- Background -----------------------------------------------------------
+  const bgStyle = brandProfile.visual?.background?.style || 'solid_dark';
   let backgroundXml = `  <rect width="${width}" height="${height}" fill="${bgColor}"/>`;
+  let backgroundGradientDefs = '';
 
+  // Generate gradient background if style is "gradient"
+  if (bgStyle === 'gradient' || bgStyle === 'radial_glow' || bgStyle === 'diagonal_sweep') {
+    const accentColor = brandProfile.visual?.colors?.accent || '#666666';
+    const gradientStyle = brandProfile.visual?.background?.gradientStyle || bgStyle;
+
+    if (gradientStyle === 'radial_glow') {
+      backgroundGradientDefs = `
+    <radialGradient id="bgGlow" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="${accentColor}" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="${bgColor}" stop-opacity="0"/>
+    </radialGradient>`;
+      backgroundXml = [
+        `  <rect width="${width}" height="${height}" fill="${bgColor}"/>`,
+        `  <rect width="${width}" height="${height}" fill="url(#bgGlow)"/>`,
+      ].join('\n');
+    } else if (gradientStyle === 'diagonal_sweep') {
+      backgroundGradientDefs = `
+    <linearGradient id="bgSweep" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${accentColor}" stop-opacity="0.08"/>
+      <stop offset="50%" stop-color="${bgColor}" stop-opacity="0"/>
+      <stop offset="100%" stop-color="${accentColor}" stop-opacity="0.05"/>
+    </linearGradient>`;
+      backgroundXml = [
+        `  <rect width="${width}" height="${height}" fill="${bgColor}"/>`,
+        `  <rect width="${width}" height="${height}" fill="url(#bgSweep)"/>`,
+      ].join('\n');
+    } else {
+      // Default linear gradient (dark to darker)
+      const darkerBg = mixColors(bgColor, '#000000', 0.4);
+      backgroundGradientDefs = `
+    <linearGradient id="bgLinear" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="${bgColor}"/>
+      <stop offset="100%" stop-color="${darkerBg}"/>
+    </linearGradient>`;
+      backgroundXml = `  <rect width="${width}" height="${height}" fill="url(#bgLinear)"/>`;
+    }
+  }
+
+  // Custom background image overrides gradient
   const bgImage =
     slideNum === 1
       ? brandProfile.visual?.background?.heroImage
@@ -484,7 +525,6 @@ function buildFinalSvg(innerContent, brandProfile, slideNum) {
     try {
       const resolvedBgPath = resolve(process.cwd(), bgImage);
       if (bgImage.endsWith('.svg')) {
-        // Inline SVG background
         const bgSvgRaw = readFileSync(resolvedBgPath, 'utf-8');
         const bgContent = bgSvgRaw
           .replace(/<\?xml[^?]*\?>/, '')
@@ -496,24 +536,38 @@ function buildFinalSvg(innerContent, brandProfile, slideNum) {
           `    ${bgContent}`,
           `  </g>`,
         ].join('\n');
+        backgroundGradientDefs = ''; // Image overrides gradient
       } else {
-        // Raster image — embed as base64
         const imgBuffer = readFileSync(resolvedBgPath);
         const base64 = imgBuffer.toString('base64');
         const ext = bgImage.split('.').pop().toLowerCase();
         const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
         backgroundXml = `  <image href="data:${mime};base64,${base64}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid slice"/>`;
+        backgroundGradientDefs = '';
       }
     } catch {
-      // Fall back to solid colour — already set above
+      // Fall back to solid/gradient — already set above
     }
   }
 
+  // --- Google Fonts import ---------------------------------------------------
+  // Convert font names to Google Fonts URL format (spaces → +)
+  const googleFonts = [fontPrimary, fontSecondary]
+    .filter((f, i, a) => a.indexOf(f) === i) // dedupe
+    .filter(f => !['Inter', 'Arial', 'Helvetica', 'sans-serif', 'serif', 'monospace'].includes(f))
+    .map(f => f.replace(/\s+/g, '+'))
+    .join('&family=');
+
+  const fontImport = googleFonts
+    ? `@import url('https://fonts.googleapis.com/css2?family=${googleFonts}:wght@400;500;600;700;800;900&display=swap');`
+    : '';
+
   // --- Assemble -------------------------------------------------------------
   return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   <defs>
     <style>
+      ${fontImport}
       text {
         font-family: '${fontPrimary}', '${fontSecondary}', -apple-system, BlinkMacSystemFont, sans-serif;
         letter-spacing: -0.02em;
@@ -521,7 +575,7 @@ function buildFinalSvg(innerContent, brandProfile, slideNum) {
     </style>
     <linearGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="0%">
 ${stopsXml}
-    </linearGradient>
+    </linearGradient>${backgroundGradientDefs}
   </defs>
 
 ${backgroundXml}

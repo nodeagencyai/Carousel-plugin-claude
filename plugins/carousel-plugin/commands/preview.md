@@ -17,12 +17,17 @@ If no carousel found, tell user to run `/carousel:generate` first.
 
 Create a temporary HTML file at `./carousels/.preview.html` with this structure:
 
+Before generating the HTML, read `brand-profile.json` to get the font names. Include them as a Google Fonts link.
+
 ```html
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <title>Carousel Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family={font_primary}:wght@400;500;600;700;800;900&family={font_secondary}:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
