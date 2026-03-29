@@ -10,49 +10,40 @@ argument-hint: "Your topic here"
 
 1. **Brand profile**: Read `brand-profile.json` from project root. If not found, tell the user to run `/carousel:setup` first and stop.
 
-2. **API key**: Check `OPENROUTER_API_KEY` environment variable. If not set, ask the user for it.
+2. **API key**: Check `OPENROUTER_API_KEY` environment variable. If not set, ask the user for it. This is only needed for Gemini (SVG rendering) — content strategy uses YOU (Claude).
 
 3. **Input**: The user should provide a topic. They may also provide:
    - Additional details/context
    - A URL to extract content from (use WebFetch to get the page content)
    - Desired slide count (3, 5, 7, or 10 — default 5)
-   - `--skip-validation` flag to skip the Opus validation pass for faster generation
+   - `--skip-validation` flag to skip the validation pass for faster generation
 
-## Step 1: Content Strategy (Opus via OpenRouter)
+## Step 1: Content Strategy (YOU — Claude)
 
-Make a WebFetch POST request to `https://openrouter.ai/api/v1/chat/completions` with:
+YOU are the content strategist. You are already Opus running inside Claude Code — no need to call OpenRouter for this.
 
-```json
-{
-  "model": "anthropic/claude-opus-4",
-  "messages": [
-    {
-      "role": "system",
-      "content": "[Load the strategy system prompt from prompts/strategy-system.md. Fill ALL template variables with values from brand-profile.json — brand name, tone, density, audience, industry, voice guidelines, frameworks, etc. Every {placeholder} must be replaced with the actual brand profile value before sending.]"
-    },
-    {
-      "role": "user",
-      "content": "Create a carousel strategy for: {user's topic}\n\nDetails: {user's details if any}"
-    }
-  ],
-  "temperature": 0.7,
-  "max_tokens": 4000
-}
-```
+Read the strategy system prompt from `prompts/strategy-system.md` (located in the carousel plugin directory). Fill ALL template variables with values from `brand-profile.json`:
+- `{{BRAND_NAME}}` → brand.name
+- `{{INDUSTRY}}` → brand.brand.industry
+- `{{AUDIENCE}}` → brand.brand.audience
+- `{{VOICE_GUIDELINES}}` → brand.brand.voice (joined as comma-separated string)
+- `{{TONE}}` → brand.content.tone
+- `{{DENSITY}}` → brand.content.density
+- `{{SLIDE_COUNT}}` → user's requested count or brand.content.slideCount.default
 
-Headers:
-```
-Authorization: Bearer {OPENROUTER_API_KEY}
-Content-Type: application/json
-HTTP-Referer: https://github.com/nodeagencyai/Carousel-plugin-claude
-X-Title: NODE Carousel Generator
-```
+Then follow that prompt yourself to generate the content strategy JSON. You ARE the strategist — think carefully about:
+- Narrative arc across slides
+- Framework variety (don't repeat the same framework)
+- Data fidelity (ONLY use data the user provides, never invent statistics)
+- Headlines that use the user's terminology
 
-Parse the JSON response from the strategy. Report to the user: "Strategy complete — generating {N} slides with frameworks: {list frameworks}"
+Output a JSON object with the strategy. Report to the user: "Strategy complete — generating {N} slides with frameworks: {list frameworks}"
 
 ## Step 2: SVG Generation (Gemini via OpenRouter)
 
-For EACH slide in the strategy, make a WebFetch POST to the same endpoint with:
+This is the ONLY paid API call. Gemini generates the actual SVG visuals — this is what it's best at.
+
+For EACH slide in the strategy, make a WebFetch POST to `https://openrouter.ai/api/v1/chat/completions`:
 
 ```json
 {
@@ -60,7 +51,7 @@ For EACH slide in the strategy, make a WebFetch POST to the same endpoint with:
   "messages": [
     {
       "role": "system",
-      "content": "[Load and fill the visual system prompt from prompts/visual-system.md with brand values + this slide's strategy data + framework instructions from prompts/frameworks.md]"
+      "content": "[Load and fill the visual system prompt from prompts/visual-system.md with brand values + this slide's strategy data + the matching framework instructions from prompts/frameworks.md]"
     },
     {
       "role": "user",
@@ -70,6 +61,14 @@ For EACH slide in the strategy, make a WebFetch POST to the same endpoint with:
   "temperature": 0.2,
   "max_tokens": 16000
 }
+```
+
+Headers:
+```
+Authorization: Bearer {OPENROUTER_API_KEY}
+Content-Type: application/json
+HTTP-Referer: https://github.com/nodeagencyai/Carousel-plugin-claude
+X-Title: NODE Carousel Generator
 ```
 
 After each slide completes:
@@ -88,42 +87,52 @@ node {plugin_root}/scripts/post-process.mjs --input ./carousels/{dir}/.raw-slide
 Where `{plugin_root}` is the carousel plugin's installation directory (use `${CLAUDE_PLUGIN_ROOT}` if available, otherwise resolve from the plugin path).
 
 The post-processing script handles:
-- Gradient injection (brand gradient definitions)
-- Background embedding (solid color or background image from brand profile)
-- Safe zone validation (content area y:300-1100, x:140-920)
-- Black rect removal (strips any full-size black rectangles Gemini may add)
-- Font CSS injection (Google Fonts or system font declarations)
-- Proper SVG wrapping (xmlns, viewBox, width/height from canvas config)
+- Gradient injection (7-stop chrome gradient from brand colors)
+- Background embedding (solid color, SVG gradient, or raster image from brand profile)
+- Safe zone validation and coordinate clamping (y:300-1100, x:140-920)
+- Black rect removal (strips full-canvas black rectangles Gemini adds)
+- Font CSS injection
+- Proper SVG wrapping (xmlns, viewBox, width/height)
 
-**If post-process.mjs fails**: Show the error to the user and fall back to the raw SVG file (copy `.raw-slide-{N}.svg` to `slide-{N}.svg` as-is). Warn that the slide may need manual cleanup.
+**If post-process.mjs fails**: Show the error to the user and fall back to the raw SVG file. Warn that the slide may need manual cleanup.
 
-## Step 4: Validation Pass
+## Step 4: Validation & Cleanup (YOU — Claude)
 
-Skip this step if the user passed `--skip-validation` or explicitly asked for faster generation.
+Skip this step if the user passed `--skip-validation`.
 
-After ALL slides are generated and post-processed, YOU (Claude — the one running in Claude Code) review each slide directly. This costs the user nothing extra — no additional API calls.
+This is the quality gate — the same approach the original NODE carousel generator uses with Opus, except YOU are Opus already running in Claude Code. No extra API cost.
 
-For each `slide-{N}.svg`:
+For each `slide-{N}.svg`, read the file and validate + fix:
 
-1. Read the post-processed SVG file content using the Read tool
-2. Review it yourself for these quality issues:
-   - Elements outside safe zone (y < 300 or y > 1100, x < 140 or x > 920)
-   - ALL CAPS text (any text content that is fully uppercase)
-   - Gradient (`url(#brandGradient)`) used on more than 2 elements
-   - Overlapping text elements (multiple text elements with similar y-coordinates and overlapping x-ranges)
-   - Missing or malformed SVG elements
-3. If issues found:
-   - Fix the SVG content directly using the Edit tool
-   - Re-run the post-process script to ensure the wrapper is intact
-   - Report: "Slide {N} — fixed: {brief description of fixes}"
-4. If no issues:
-   - Report: "Slide {N} — passed validation"
+### 4a. Remove background shapes
+Check for and remove any remaining full-canvas rectangles that Gemini may have added inside the content group. Look for `<rect>` elements with width >= 1000 and height >= 1300, or with fill="#000000"/"black". Remove them using the Edit tool.
 
-This validation uses YOUR capabilities as Claude — no external API calls needed.
+### 4b. Fix SVG structure
+Review the SVG content inside the `<g id="content">` group for:
+- Unclosed or improperly nested tags — fix them
+- Duplicate `<defs>` or `<style>` blocks that Gemini snuck in — remove them (the wrapper already has these)
+
+### 4c. Reduce gradient overuse
+Count elements using `fill="url(#brandGradient)"` or `fill="url(#nodeSilver)"`. If more than 2 elements use gradient:
+- Keep gradient on the 1-2 most important elements (hero keyword, primary data point)
+- Change the rest to `fill="#FFFFFF"` (pure white)
+
+### 4d. Ensure generous spacing
+Check that major text elements have at least 60px vertical gap between them. If elements are too close (< 40px gap), adjust y-coordinates to add breathing room.
+
+### 4e. Fix ALL CAPS
+Find any text content that is fully uppercase (more than 3 consecutive uppercase words). Convert to Title Case.
+
+### 4f. Final safe zone check
+Verify no elements have y < 300 or y > 1100. If any remain after post-processing, fix with Edit tool.
+
+After fixing, if you made any edits, re-run the post-process script to ensure the SVG wrapper is intact.
+
+Report for each slide: "Slide {N} — {passed validation | fixed: brief description}"
 
 ## Step 5: Save Strategy & Summary
 
-1. **Save strategy**: Write the Opus strategy JSON to `./carousels/{date}-{slug}/strategy.json`
+1. **Save strategy**: Write the strategy JSON to `./carousels/{date}-{slug}/strategy.json`
 
 2. **Report**:
    - Number of slides generated
@@ -137,5 +146,4 @@ This validation uses YOUR capabilities as Claude — no external API calls neede
 - If OpenRouter returns an error, show the error message and suggest checking the API key
 - If Gemini returns malformed SVG, retry once with the instruction "Return ONLY valid SVG content elements, no markdown, no svg wrapper"
 - If brand-profile.json is missing required fields, tell the user which fields and suggest re-running /carousel:setup
-- If post-process.mjs fails, show the error and fall back to the raw SVG (see Step 3)
-- If Opus validation changes the SVG, re-run post-process to ensure the wrapper is intact (see Step 4)
+- If post-process.mjs fails, show the error and fall back to the raw SVG

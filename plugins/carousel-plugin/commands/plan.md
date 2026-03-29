@@ -24,28 +24,9 @@ Preview the content strategy BEFORE spending API credits on SVG generation. The 
 
 Read `brand-profile.json` from project root. If not found, tell user to run `/carousel:setup` first.
 
-### Step 2: Generate Strategy (Opus via OpenRouter)
+### Step 2: Generate Strategy (YOU — Claude)
 
-Call OpenRouter with the strategy prompt (same as `/carousel:generate` Step 1):
-
-WebFetch POST to `https://openrouter.ai/api/v1/chat/completions`:
-```json
-{
-  "model": "anthropic/claude-opus-4",
-  "messages": [
-    {
-      "role": "system",
-      "content": "[Load and fill strategy-system.md prompt with brand values]"
-    },
-    {
-      "role": "user",
-      "content": "Create a carousel strategy for: {topic}\n\nDetails: {details}"
-    }
-  ],
-  "temperature": 0.3,
-  "max_tokens": 4000
-}
-```
+YOU are the strategist. Read the strategy prompt from `prompts/strategy-system.md`, fill in the brand values from `brand-profile.json`, and follow it to generate the content strategy JSON yourself. No API call needed — you're already Opus.
 
 ### Step 3: Present Strategy for Review
 
@@ -106,24 +87,35 @@ Ask clarifying questions ONE AT A TIME:
 3. "Any specific angles or subtopics you want covered?"
 4. "What's the posting cadence?" (e.g., daily, 3x/week) — optional, for scheduling context
 
-### Step 2: Generate Series Plan (Opus via OpenRouter)
+### Step 2: Generate Series Plan (YOU — Claude)
 
-Call OpenRouter:
+YOU plan the series directly. You are a content strategist. Using the brand context from `brand-profile.json`:
+
+Plan a series of {count} carousels around the user's theme. For each carousel, determine:
+- A unique topic and angle that builds on the series narrative
+- Recommended slide count (3, 5, 7, or 10)
+- Key frameworks to use (hero, data_table, bar_chart, quadrant, stack, flow, radiance, the_shift)
+- An opening hook for slide 1
+- The target takeaway for the audience
+
+Avoid repetition across carousels — each should have a distinct angle.
+
+Output as JSON:
 ```json
 {
-  "model": "anthropic/claude-opus-4",
-  "messages": [
+  "series_title": "...",
+  "series_narrative": "how the carousels connect",
+  "carousels": [
     {
-      "role": "system",
-      "content": "You are a content strategist planning a carousel series for {brand_name}. Brand: {brand_description}. Audience: {audience}. Tone: {tone}. Industry: {industry}.\n\nPlan a series of {count} carousels around the theme below. Each carousel should have a unique angle that builds on the series narrative. Avoid repetition across carousels.\n\nRespond with JSON:\n{\n  \"series_title\": \"...\",\n  \"series_narrative\": \"how the carousels connect\",\n  \"carousels\": [\n    {\n      \"number\": 1,\n      \"topic\": \"specific carousel topic\",\n      \"angle\": \"unique angle/hook\",\n      \"slide_count\": 5,\n      \"key_frameworks\": [\"hero\", \"data_table\", \"flow\"],\n      \"hook\": \"opening hook for slide 1\",\n      \"target_takeaway\": \"what the audience learns\"\n    }\n  ]\n}"
-    },
-    {
-      "role": "user",
-      "content": "Plan a carousel series about: {theme}\n\nSubtopics to cover: {subtopics}\nNumber of carousels: {count}"
+      "number": 1,
+      "topic": "specific carousel topic",
+      "angle": "unique angle/hook",
+      "slide_count": 5,
+      "key_frameworks": ["hero", "data_table", "flow"],
+      "hook": "opening hook for slide 1",
+      "target_takeaway": "what the audience learns"
     }
-  ],
-  "temperature": 0.4,
-  "max_tokens": 4000
+  ]
 }
 ```
 
