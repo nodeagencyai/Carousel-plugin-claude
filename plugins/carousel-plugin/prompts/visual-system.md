@@ -13,11 +13,13 @@ DESIGN SYSTEM SPECIFICATIONS:
 - TYPOGRAPHY ({{FONT_PRIMARY}} & {{FONT_SECONDARY}} ONLY):
   * Headline: 64-96px, font-family="{{FONT_PRIMARY}}", letter-spacing: -0.02em, fill: {{COLOR_TEXT}}
   * Subheadline: 28-36px, font-family="{{FONT_SECONDARY}}", fill: {{COLOR_CAPTION}}
-  * Data Values: 40-48px, font-family="{{FONT_PRIMARY}}", fill: url(#brandGradient) — CONSISTENT SIZE
+  * Data Values: 48-96px, font-family="{{FONT_PRIMARY}}", fill: url(#brandGradient) — CONSISTENT SIZE
+  Key metrics and numbers should be LARGE and commanding (60-96px) — they're the visual anchor of the slide.
   * Body: 24-28px, font-family="{{FONT_SECONDARY}}", line-height: 1.5em, fill: {{COLOR_TEXT}}
   * Captions: 18-20px, font-family="{{FONT_SECONDARY}}", fill: {{COLOR_TERTIARY}}
 - BRAND GRADIENT (pre-defined, DO NOT create your own):
   Use fill="url(#brandGradient)" — it's already in the SVG wrapper. NEVER define <linearGradient>.
+- Impact: Maximum 3-4 key data points per slide. Every slide is social media content competing in a fast-scrolling feed — make it BOLD, CLEAR, and scroll-stopping.
 - APPLE DESIGN PRINCIPLES: Generous whitespace, subtle depth, no clutter
 
 SPATIAL REASONING HEURISTICS:
@@ -35,9 +37,28 @@ COMPONENT CONSTRUCTION BY FRAMEWORK:
 - BAR_CHART: Labels ABOVE bars, values RIGHT of bars. Thin 30px bars. NO overlapping text.
 - HERO: Minimal. One headline, one gradient keyword via tspan, 60% empty space.
 
+VISUAL HIERARCHY — EVERY SLIDE NEEDS A DOMINANT ELEMENT:
+- HERO: Headline or gradient keyword at 84-96px — MASSIVE
+- BAR_CHART: Bars with prominent width and SOLID fill, clear data values at 60-80px
+- DATA_TABLE: Data values LARGE (60-80px), clearly differentiated from labels
+- STACK: Layer titles BOLD, each layer feels like a solid CARD not a ghost
+- RADIANCE: Center element BOLD and solid, eye-catching
+- FLOW: Step numbers/icons LARGE (40-60px), clear progression
+- THE_SHIFT: "After" side HIGH CONTRAST, clearly better than "before"
+Without a dominant element, slides look like documentation, not social media content.
+
 GLASS MORPHISM ({{DESIGN_MODE}} mode):
-- Dark: fill="{{COLOR_TEXT}}" fill-opacity="0.04" stroke="url(#brandGradient)" stroke-width="1" rx="12"
-- Light: fill="{{BACKGROUND_COLOR}}" fill-opacity="0.06" stroke="url(#brandGradient)" stroke-width="1" rx="12"
+- Dark: fill="{{COLOR_TEXT}}" fill-opacity="0.04-0.10" stroke="url(#brandGradient)" stroke-width="1" rx="12"
+- Light: fill="{{BACKGROUND_COLOR}}" fill-opacity="0.06-0.15" stroke="url(#brandGradient)" stroke-width="1" rx="12"
+On light backgrounds, containers need MORE opacity to be visible. Add subtle borders (stroke-width 1-1.5px, stroke-opacity 0.15-0.25).
+
+LIGHT MODE CONTRAST (when designMode is 'light'):
+- Use SOLID containers with slight shadow, not just glass morphism
+- Container fills: 0.06-0.15 opacity (higher than dark mode)
+- Text contrast: use near-black for headlines (#000000 or {{COLOR_TEXT}}), not mid-gray
+- Accent elements (bars, badges, key metrics): use SOLID brand accent color ({{COLOR_ACCENT}})
+- Borders: 1-2px solid with 0.15-0.25 opacity for definition
+- Light backgrounds absorb subtlety — be BOLDER than you think necessary
 
 ⚠️ CRITICAL - NO BACKGROUND SHAPES:
 - DO NOT create any background rectangles
@@ -111,4 +132,4 @@ SPACING:
 - 30-40% of canvas empty
 - NEVER crowd elements
 
-Generate clean SVG code with no explanations. Remember: FIRST element y >= {{CONTENT_START}}!
+Generate clean SVG code with no explanations. Remember: FIRST element y >= {{CONTENT_START}}! Make it BOLD. Make it CLEAR. Make it scroll-stopping.

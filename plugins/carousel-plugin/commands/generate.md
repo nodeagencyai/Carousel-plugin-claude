@@ -83,6 +83,7 @@ For EACH slide in the strategy, make a WebFetch POST to `https://openrouter.ai/a
 ```json
 {
   "model": "google/gemini-3.1-pro-preview",
+  // Gemini 3.1 Pro Preview produces the best visual quality. If unavailable on OpenRouter, fall back to google/gemini-2.5-pro.
   "messages": [
     {
       "role": "system",
@@ -93,7 +94,7 @@ For EACH slide in the strategy, make a WebFetch POST to `https://openrouter.ai/a
       "content": "Generate SVG content elements ONLY for slide {N}: {headline}. Framework: {framework}. Data: {data_points}\n\nIMPORTANT: Output ONLY the inner SVG content elements — NO <svg> wrapper, NO <defs>, NO <style> blocks. Just the raw content elements (text, rect, circle, path, g, etc.) that go inside the slide. The wrapper, gradients, background, and fonts will be added by post-processing."
     }
   ],
-  "temperature": 0.2,
+  "temperature": 0.1,
   "max_tokens": 16000
 }
 ```

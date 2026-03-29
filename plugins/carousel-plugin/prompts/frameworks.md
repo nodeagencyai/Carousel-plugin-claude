@@ -2,6 +2,8 @@
 
 > **Note:** These coordinates are designed for 1080x1350 canvas. If your brand profile uses different dimensions, coordinates may need adjustment.
 
+**LIGHT MODE RULE:** On light backgrounds (designMode='light'), increase ALL opacity values by 50% compared to dark mode. Light backgrounds absorb subtlety — be bolder.
+
 This file contains the spatial rules and layout instructions for each carousel visual framework. These are injected into the visual generation prompt as `{{FRAMEWORK_INSTRUCTIONS}}` based on the strategy's chosen framework for each slide.
 
 ---
@@ -43,6 +45,7 @@ Canvas size:             1080 x 1350
 ```
 Headline:       Centered at y=600-650
                 font-size: 84-96px ({{FONT_PRIMARY}})
+                If there's a key metric, display it at 80-120px — the LARGEST element on the slide.
                 text-anchor: middle, x=530
                 letter-spacing: -0.02em
                 fill: {{COLOR_TEXT}}
@@ -169,6 +172,7 @@ Row spacing:    200px (gives 170px breathing room to prevent ANY overlap)
 
 BAR SPECIFICATIONS:
 - Bar height:   30px (thin and elegant -- NOT 40px)
+                On light backgrounds, increase bar height to 40-50px for visibility. Bars should be SOLID fill (accent color or text color), not subtle opacity.
 - Bar max width: 400px
 - Bar start:    x=200 (or x=140)
 - Background track: same y position, width to x=880
@@ -274,6 +278,7 @@ Layer container: <rect x="..." y="..." width="..." height="200"
                 Optional subtle drop shadow via filter
 
 Top layer:      fill-opacity="0.06" (descending: 0.05, 0.04)
+                On light backgrounds, increase opacity to 0.06-0.12. Each layer should feel like a CARD, not a ghost. Use solid borders on light backgrounds.
 
 Layer number:   x = layer_left + 40px, y = layer_y + 110px
                 font-family: {{FONT_PRIMARY}}, font-size: 40px

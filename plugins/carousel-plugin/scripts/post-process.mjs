@@ -295,15 +295,17 @@ cleanContent = fixSafeZone(cleanContent, brand);
 // ---------------------------------------------------------------------------
 
 function reduceGradientOveruse(svgStr, brandProfile) {
-  const textColor = brandProfile.visual?.colors?.text || '#FFFFFF';
+  const isLight = brandProfile.visual?.designMode === 'light';
+  const replacementColor = isLight
+    ? (brandProfile.visual?.colors?.accent || '#333333')
+    : (brandProfile.visual?.colors?.text || '#FFFFFF');
   const gradientPattern = /fill="url\(#(?:brandGradient|nodeSilver|brandGradientAlt)\)"/g;
   const matches = [...svgStr.matchAll(gradientPattern)];
   if (matches.length <= 2) return svgStr;
-  // Keep first 2, replace rest with text color
   let count = 0;
   return svgStr.replace(gradientPattern, (match) => {
     count++;
-    return count <= 2 ? match : `fill="${textColor}"`;
+    return count <= 2 ? match : `fill="${replacementColor}"`;
   });
 }
 
@@ -489,10 +491,14 @@ function buildFinalSvg(innerContent, brandProfile, slideNum) {
       const resolvedBgPath = resolve(process.cwd(), bgImage);
       if (bgImage.endsWith('.svg')) {
         const bgSvgRaw = readFileSync(resolvedBgPath, 'utf-8');
-        const bgContent = bgSvgRaw
+        // Namespace background gradient IDs to avoid collision with content
+        let bgContent = bgSvgRaw
           .replace(/<\?xml[^?]*\?>/, '')
           .replace(/<svg[^>]*>/, '')
           .replace(/<\/svg>/, '');
+        // Prefix gradient IDs with bg- to avoid collision
+        bgContent = bgContent.replace(/id="([^"]+)"/g, 'id="bg-$1"');
+        bgContent = bgContent.replace(/url\(#([^)]+)\)/g, 'url(#bg-$1)');
         backgroundXml = [
           `  <g id="background">`,
           `    <rect width="${width}" height="${height}" fill="${bgColor}"/>`,
