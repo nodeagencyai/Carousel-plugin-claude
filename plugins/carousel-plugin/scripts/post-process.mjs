@@ -127,10 +127,10 @@ cleanContent = removeBlackRects(cleanContent);
 
 function fixSafeZone(svgStr, brandProfile) {
   const headerHeight = brandProfile.visual?.canvas?.headerHeight || 280;
-  const footerStart = brandProfile.visual?.canvas?.footerStart || 1150;
+  const contentStart = brandProfile.visual?.canvas?.contentStart || 300;
+  const footerStart = brandProfile.visual?.canvas?.footerStart || 1100;
   const safeXMin = brandProfile.visual?.canvas?.safeXMin || 140;
   const safeXMax = brandProfile.visual?.canvas?.safeXMax || 920;
-  const contentStart = headerHeight + 20;
 
   // Fix y-coordinates on common SVG elements
   svgStr = svgStr.replace(
@@ -158,6 +158,126 @@ function fixSafeZone(svgStr, brandProfile) {
 }
 
 cleanContent = fixSafeZone(cleanContent, brand);
+
+// ---------------------------------------------------------------------------
+// Step 4b — Full-canvas rect removal (dark fills, light fills, oversized)
+// ---------------------------------------------------------------------------
+
+function removeFullCanvasRects(svgStr) {
+  const widthRe = /width=["'](\d+(?:\.\d+)?)["']/i;
+  const heightRe = /height=["'](\d+(?:\.\d+)?)["']/i;
+  const fillRe = /fill=["']([^"']+)["']/i;
+
+  function isDarkFill(fill) {
+    if (!fill) return false;
+    const hex = fill.replace(/^#/, '');
+    if (!/^[0-9a-f]{6}$/i.test(hex)) return false;
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    return r < 0x30 && g < 0x30 && b < 0x30;
+  }
+
+  function isLightFill(fill) {
+    if (!fill) return false;
+    const lower = fill.toLowerCase().trim();
+    if (lower === 'white' || lower === '#ffffff' || lower === '#fff' || lower === '#f5f5f5') return true;
+    const hex = fill.replace(/^#/, '');
+    if (!/^[0-9a-f]{6}$/i.test(hex)) return false;
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    return r >= 0xF0 && g >= 0xF0 && b >= 0xF0;
+  }
+
+  svgStr = svgStr.replace(/<rect[^>]*\/?\s*>/gi, (tag) => {
+    const wMatch = tag.match(widthRe);
+    const hMatch = tag.match(heightRe);
+    const fillMatch = tag.match(fillRe);
+    const w = wMatch ? parseFloat(wMatch[1]) : 0;
+    const h = hMatch ? parseFloat(hMatch[1]) : 0;
+    const fill = fillMatch ? fillMatch[1] : '';
+
+    // Remove any rect that covers the full canvas
+    if (w >= 1000 && h >= 1300) return '';
+    // Remove dark-fill large rects (background is in the wrapper)
+    if (isDarkFill(fill) && w >= 1000 && h >= 1000) return '';
+    // Remove light-fill large rects
+    if (isLightFill(fill) && w >= 1000 && h >= 1000) return '';
+
+    return tag;
+  });
+  return svgStr;
+}
+
+cleanContent = removeFullCanvasRects(cleanContent);
+
+// ---------------------------------------------------------------------------
+// Step 4c — Gradient overuse reduction
+// ---------------------------------------------------------------------------
+
+function reduceGradientOveruse(svgStr, brandProfile) {
+  const textColor = brandProfile.visual?.colors?.text || '#FFFFFF';
+  const gradientPattern = /fill="url\(#(?:brandGradient|nodeSilver|brandGradientAlt)\)"/g;
+  const matches = [...svgStr.matchAll(gradientPattern)];
+  if (matches.length <= 2) return svgStr;
+  // Keep first 2, replace rest with text color
+  let count = 0;
+  return svgStr.replace(gradientPattern, (match) => {
+    count++;
+    return count <= 2 ? match : `fill="${textColor}"`;
+  });
+}
+
+cleanContent = reduceGradientOveruse(cleanContent, brand);
+
+// ---------------------------------------------------------------------------
+// Step 4d — ALL CAPS detection -> Title Case
+// ---------------------------------------------------------------------------
+
+function fixAllCaps(svgStr) {
+  // Find text content between > and </ that has 3+ consecutive uppercase words
+  return svgStr.replace(/>([^<]+)</g, (match, text) => {
+    const words = text.trim().split(/\s+/);
+    const upperCount = words.filter(w => w.length > 1 && w === w.toUpperCase() && /[A-Z]/.test(w)).length;
+    if (upperCount >= 3 && words.length >= 3) {
+      const titleCase = text.replace(/\b([A-Z])([A-Z]+)\b/g, (m, first, rest) => {
+        // Keep short abbreviations like AI, CEO, ROI
+        if (m.length <= 3) return m;
+        return first + rest.toLowerCase();
+      });
+      return '>' + titleCase + '<';
+    }
+    return match;
+  });
+}
+
+cleanContent = fixAllCaps(cleanContent);
+
+// ---------------------------------------------------------------------------
+// Step 4e — Font-family enforcement
+// ---------------------------------------------------------------------------
+
+function enforceFonts(svgStr, brandProfile) {
+  const primary = brandProfile.visual?.fonts?.primary || 'Inter';
+  const secondary = brandProfile.visual?.fonts?.secondary || 'Inter';
+  // Replace hallucinated fonts (Arial, Helvetica, Satoshi-Black, etc.)
+  // but keep the brand's chosen fonts
+  return svgStr.replace(/font-family="([^"]+)"/g, (match, font) => {
+    if (font === primary || font === secondary) return match;
+    // Map Bold/headline fonts to primary, others to secondary
+    if (/bold|headline|title/i.test(font)) return `font-family="${primary}"`;
+    return `font-family="${secondary}"`;
+  });
+}
+
+cleanContent = enforceFonts(cleanContent, brand);
+
+// ---------------------------------------------------------------------------
+// Step 4f — Rename nodeSilver -> brandGradient
+// ---------------------------------------------------------------------------
+
+cleanContent = cleanContent.replace(/url\(#nodeSilver\)/g, 'url(#brandGradient)');
 
 // ---------------------------------------------------------------------------
 // Step 5 — Color mixing helper
@@ -235,9 +355,10 @@ function buildFinalSvg(innerContent, brandProfile, slideNum) {
 
   if (bgImage) {
     try {
+      const resolvedBgPath = resolve(process.cwd(), bgImage);
       if (bgImage.endsWith('.svg')) {
         // Inline SVG background
-        const bgSvgRaw = readFileSync(resolve(bgImage), 'utf-8');
+        const bgSvgRaw = readFileSync(resolvedBgPath, 'utf-8');
         const bgContent = bgSvgRaw
           .replace(/<\?xml[^?]*\?>/, '')
           .replace(/<svg[^>]*>/, '')
@@ -250,7 +371,7 @@ function buildFinalSvg(innerContent, brandProfile, slideNum) {
         ].join('\n');
       } else {
         // Raster image — embed as base64
-        const imgBuffer = readFileSync(resolve(bgImage));
+        const imgBuffer = readFileSync(resolvedBgPath);
         const base64 = imgBuffer.toString('base64');
         const ext = bgImage.split('.').pop().toLowerCase();
         const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
@@ -272,9 +393,6 @@ function buildFinalSvg(innerContent, brandProfile, slideNum) {
       }
     </style>
     <linearGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-${stopsXml}
-    </linearGradient>
-    <linearGradient id="nodeSilver" x1="0%" y1="0%" x2="100%" y2="0%">
 ${stopsXml}
     </linearGradient>
   </defs>

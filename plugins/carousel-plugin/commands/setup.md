@@ -90,32 +90,40 @@ Ask these questions ONE AT A TIME:
    - If yes, note the file path
    - If no, skip — slides will use full header space
 
+6. **Design mode** — "Do you prefer dark or light slides?"
+   - **Dark mode** (default, recommended): Dark backgrounds with light text. Best for social media feeds.
+     - Defaults: text=#FFFFFF, caption=#999999, primary=#1a1a1a
+   - **Light mode**: Light backgrounds with dark text. Clean, minimal feel.
+     - Defaults: text=#1a1a1a, caption=#666666, primary=#FFFFFF
+   - Store the choice in `visual.designMode` ("dark" or "light")
+   - Pre-fill color defaults based on the selection (user can still override in the Colors question)
+
 ## Stage 2: Content Style
 
-6. **Text density** — "How text-heavy should your carousels be?"
+7. **Text density** — "How text-heavy should your carousels be?"
    - Minimal: Big bold statements, few words, maximum visual impact
    - Balanced: Mix of data points and narrative text (recommended)
    - Dense: Data-heavy, lots of information, infographic style
 
-7. **Tone** — "What tone fits your brand?"
+8. **Tone** — "What tone fits your brand?"
    - Educational: Informative, teaching-focused
    - Professional: Corporate, polished
    - Casual: Friendly, conversational
    - Bold: Provocative, attention-grabbing
 
-8. **Visual frameworks** — "Any preferred visual styles for your slides?"
+9. **Visual frameworks** — "Any preferred visual styles for your slides?"
    - Show the options: data tables, bar charts, quadrant matrices, stacked layers, flow diagrams, or "auto" (let AI decide)
    - Default to "auto" if unsure
 
 ## Stage 3: Brand DNA
 
-9. **Brand description** — "What does your brand do? (one sentence)"
+10. **Brand description** — "What does your brand do? (one sentence)"
 
-10. **Target audience** — "Who is your target audience?"
+11. **Target audience** — "Who is your target audience?"
 
-11. **Voice guidelines** (optional) — "Any specific brand voice rules? (e.g., 'never use exclamation marks', 'always back claims with data')"
+12. **Voice guidelines** (optional) — "Any specific brand voice rules? (e.g., 'never use exclamation marks', 'always back claims with data')"
 
-12. **Industry** — "What industry/niche are you in?"
+13. **Industry** — "What industry/niche are you in?"
 
 ## Output
 
@@ -132,19 +140,20 @@ After collecting all answers, generate the `brand-profile.json` file in the proj
       "caption": "#999999",
       "gradient": { "from": "#FF6B35", "to": "#FFB347" }
     },
-    "fonts": {
-      "primary": "Space Grotesk",
-      "secondary": "Inter"
-    },
+    "fonts": { "primary": "Inter", "secondary": "Inter" },
     "background": {
-      "style": "gradient",
+      "style": "solid_dark",
       "color": "#1a1a1a",
-      "gradientStyle": "radial_glow",
-      "heroImage": "./brand-assets/backgrounds/hero-bg.svg",
-      "contentImage": "./brand-assets/backgrounds/content-bg.svg"
+      "heroImage": null,
+      "contentImage": null
     },
-    "logo": null,
-    "canvas": { "width": 1080, "height": 1350 }
+    "canvas": {
+      "width": 1080, "height": 1350,
+      "headerHeight": 280, "contentStart": 300,
+      "footerStart": 1100,
+      "safeXMin": 140, "safeXMax": 920
+    },
+    "designMode": "dark"
   },
   "content": {
     "density": "balanced",
@@ -160,5 +169,11 @@ After collecting all answers, generate the `brand-profile.json` file in the proj
   }
 }
 ```
+
+When writing background choices:
+- **Option A (Upload)**: Set `visual.background.style` to `"image"`, store paths in `visual.background.heroImage` and/or `visual.background.contentImage`
+- **Option B (Gradient)**: Set `visual.background.style` to `"gradient"`, generate SVG files and store paths in `visual.background.heroImage` / `visual.background.contentImage`
+- **Option C (AI-generated)**: Set `visual.background.style` to `"ai_generated"`, generate SVG files and store paths in `visual.background.heroImage` / `visual.background.contentImage`
+- For all options, `visual.background.color` is the solid fallback color
 
 Confirm the profile looks good, then tell the user they're ready to generate carousels with `/carousel:generate`.

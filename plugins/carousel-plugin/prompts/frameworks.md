@@ -1,5 +1,7 @@
 # Visual Framework Definitions
 
+> **Note:** These coordinates are designed for 1080x1350 canvas. If your brand profile uses different dimensions, coordinates may need adjustment.
+
 This file contains the spatial rules and layout instructions for each carousel visual framework. These are injected into the visual generation prompt as `{{FRAMEWORK_INSTRUCTIONS}}` based on the strategy's chosen framework for each slide.
 
 ---
@@ -10,14 +12,15 @@ These constraints are enforced strictly. Every framework must obey them.
 
 ```
 SAFE AREA (absolute):    x:89-972, y:73-1252
-PRACTICAL SAFE AREA:     x:140-920, y:150-1150  ← USE THIS!
+PRACTICAL SAFE AREA:     x:140-920, y:300-1100  <- USE THIS!
 
-TOP BUFFER:              y:73-150 is LOGO AREA — keep empty except tiny accents
-BOTTOM BUFFER:           y:1150-1350 is BRANDING — absolutely NO content
+TOP BUFFER:              y:73-280 is LOGO AREA -- keep empty except tiny accents
+BOTTOM BUFFER:           y:1100-1350 is BRANDING -- absolutely NO content
 SIDE BUFFERS:            50px minimum margins (x:140 and x:920)
 
 POSITIONING RULES:
-- Headlines:             Start at y:320 MINIMUM (NEVER LOWER — this is critical!)
+- header_height:         280
+- Headlines:             Start at y:320 MINIMUM (NEVER LOWER -- this is critical!)
 - Subheadlines:          Start at y:380 if present
 - Body content:          Keep between y:420-1000
 - Bottom elements:       MUST end before y:1100
@@ -47,7 +50,7 @@ Headline:       Centered at y=600-650
 MANDATORY GRADIENT KEYWORD:
                 One keyword MUST use brand gradient via <tspan>:
                 Example: The future is <tspan fill="url(#brandGradient)">autonomous</tspan>
-                DO NOT make entire headline gradient — ONLY one impactful word
+                DO NOT make entire headline gradient -- ONLY one impactful word
                 Text structure: white fill base with <tspan> for gradient word
                 Choose the most impactful word (key concept or action word)
 
@@ -67,7 +70,7 @@ All text x >= 140
 - NO data visualizations, charts, or complex layouts
 - NO more than 2-3 text elements total
 - Keep 60%+ of canvas empty
-- The headline IS the slide — make it count
+- The headline IS the slide -- make it count
 - Color mode MUST be mixed_highlight
 
 ### Example Structure
@@ -101,9 +104,9 @@ Headline:       y=320
 Table starts:   y=400
 
 Column headers: y=420
-                font-family: {{FONT_PRIMARY}} (Satoshi-Bold)
+                font-family: {{FONT_PRIMARY}}
                 font-size: 22-24px
-                fill: {{COLOR_CAPTION}}
+                fill: {{COLOR_TERTIARY}}
 
 First data row: y=500
 Row spacing:    80px
@@ -115,7 +118,7 @@ Table width:    Max 720px, centered horizontally
                 Left edge: x=180
                 Right edge: x=900
 
-Data values:    font-family: {{FONT_SECONDARY}} (Satoshi-Medium)
+Data values:    font-family: {{FONT_SECONDARY}}
                 font-size: 26-28px
                 fill: {{COLOR_TEXT}}
 
@@ -131,7 +134,7 @@ Row backgrounds: Alternating fill-opacity (0.02 and 0.04) for subtle striping
 - One key value per row may use brandGradient fill
 - Cell padding: 30px horizontal, centered vertically in row
 - Header row gets a slightly stronger background (fill-opacity: 0.06)
-- Last row must end before y=1050 — calculate total height before rendering
+- Last row must end before y=1050 -- calculate total height before rendering
 
 ---
 
@@ -139,14 +142,14 @@ Row backgrounds: Alternating fill-opacity (0.02 and 0.04) for subtle striping
 
 **Use for**: Quantitative comparisons, rankings, performance metrics. ONLY use when user provided actual comparable numerical values.
 
-**Philosophy**: Thin, elegant horizontal bars. Not Excel charts — think editorial data visualization. The bars should feel effortless, like they belong in a design magazine.
+**Philosophy**: Thin, elegant horizontal bars. Not Excel charts -- think editorial data visualization. The bars should feel effortless, like they belong in a design magazine.
 
 ### Spatial Rules
 ```
 Headline:       y=320
                 font-size: 56-64px ({{FONT_PRIMARY}})
 
-MAXIMUM 3 BARS — calculate ALL positions BEFORE drawing to prevent overlap!
+MAXIMUM 3 BARS -- calculate ALL positions BEFORE drawing to prevent overlap!
 
 EXACT POSITIONING (use these coordinates, do NOT compute your own):
 
@@ -165,7 +168,7 @@ Bar 3:          Label y=880
 Row spacing:    200px (gives 170px breathing room to prevent ANY overlap)
 
 BAR SPECIFICATIONS:
-- Bar height:   30px (thin and elegant — NOT 40px)
+- Bar height:   30px (thin and elegant -- NOT 40px)
 - Bar max width: 400px
 - Bar start:    x=200 (or x=140)
 - Background track: same y position, width to x=880
@@ -174,13 +177,13 @@ BAR SPECIFICATIONS:
 
 LABELS:         ABOVE bars (y = bar_y - 30px)
                 x=200
-                font-family: {{FONT_SECONDARY}} (Satoshi-Medium)
+                font-family: {{FONT_SECONDARY}}
                 font-size: 24px
                 fill: {{COLOR_CAPTION}}
 
-VALUES:         To the RIGHT of bars — NO OVERLAPPING TEXT
+VALUES:         To the RIGHT of bars -- NO OVERLAPPING TEXT
                 x = bar_end + 20px (or x=600 if bar is narrow, x=900 if bar is wide)
-                font-family: {{FONT_PRIMARY}} (Satoshi-Bold)
+                font-family: {{FONT_PRIMARY}}
                 font-size: 40-48px
                 fill: url(#brandGradient) for the highest value
                 fill: {{COLOR_TEXT}} for others
@@ -188,14 +191,14 @@ VALUES:         To the RIGHT of bars — NO OVERLAPPING TEXT
 
 ### COMMON MISTAKES TO AVOID
 - DO NOT place values inside bars
-- DO NOT use computed y-offset calculations — use the EXACT y coordinates above
+- DO NOT use computed y-offset calculations -- use the EXACT y coordinates above
 - DO NOT make bars taller than 30px
 - DO NOT place any text with y > 1150
 - DO NOT use more than 3 bars
 
 ### Rules
 - **Maximum 3 bars** to maintain generous spacing
-- Labels ALWAYS above bars, values ALWAYS to the right — NO overlap
+- Labels ALWAYS above bars, values ALWAYS to the right -- NO overlap
 - The largest value gets brandGradient treatment
 - All data values: consistent 40-48px size
 
@@ -219,7 +222,7 @@ Hairlines:      Horizontal: from x=140 to x=920 at y=650
                 stroke: {{COLOR_TEXT}}, stroke-opacity: 0.15, stroke-width: 1px
 
 Axis labels:    font-family: {{FONT_SECONDARY}}, font-size: 18-20px
-                fill: {{COLOR_CAPTION}}, positioned at line endpoints
+                fill: {{COLOR_TERTIARY}}, positioned at line endpoints
 
 Quadrant labels:
   Top-left:     x=200, y=500
@@ -265,7 +268,7 @@ MUST fit:       within y=350 to y=1050
 Contained:      within x=180 to x=900
 
 Layer container: <rect x="..." y="..." width="..." height="200"
-                  fill="white" fill-opacity="0.04"
+                  fill="{{COLOR_TEXT}}" fill-opacity="0.04"
                   stroke="{{COLOR_TEXT}}" stroke-opacity="0.1"
                   rx="12"/>
                 Optional subtle drop shadow via filter
@@ -292,7 +295,7 @@ Text inside:    40px horizontal padding from layer edges
 - Verify: last layer bottom (y=1050) stays at or below y=1050
 - Top layer has slightly higher fill-opacity (0.06) to indicate priority
 - Each layer must have both a title and description
-- Glass containers: `fill="white" fill-opacity="0.04" stroke-opacity="0.1" rx="12"`
+- Glass containers: `fill="{{COLOR_TEXT}}" fill-opacity="0.04" stroke-opacity="0.1" rx="12"`
 - Optional: subtle drop shadow on layers via `<filter>` for depth
 
 ---
@@ -330,7 +333,7 @@ Arrows:         Directional arrows or gradient fade between nodes
 - Ensure equal spacing between all nodes
 - Arrows/connectors must clearly indicate direction (left to right)
 - One step may be "active" (highlighted with brandGradient stroke, slightly larger)
-- Labels must not overlap — reduce font size if needed to maintain spacing
+- Labels must not overlap -- reduce font size if needed to maintain spacing
 - All elements within x=150 to x=920
 
 ---
@@ -377,7 +380,7 @@ Spoke details:  Below spoke labels
 
 ### Rules
 - Maximum 6 spokes (4-5 is optimal for readability)
-- Each spoke must stay entirely within the safe zone (x=140-920, y=150-1150)
+- Each spoke must stay entirely within the safe zone (x=140-920, y=300-1100)
 - The central element should contain the core concept (1-3 words max)
 - Center circle: r=60, fill with brandGradient
 - Spokes at top/bottom should have labels to the side to avoid overlap with headline/footer
@@ -401,8 +404,8 @@ Headline:       y=320
 Vertical divider: x=530, from y=280 to y=1100
                   stroke: {{COLOR_TEXT}}, stroke-opacity: 0.15, stroke-width: 1px
 
-Left zone:      x=140 to x=520 — "Before" state (low opacity)
-Right zone:     x=540 to x=920 — "After" state (high contrast)
+Left zone:      x=140 to x=520 -- "Before" state (low opacity)
+Right zone:     x=540 to x=920 -- "After" state (high contrast)
 
 "Before" label: x=250, y=400
                 font-family: {{FONT_PRIMARY}}, font-size: 28-32px

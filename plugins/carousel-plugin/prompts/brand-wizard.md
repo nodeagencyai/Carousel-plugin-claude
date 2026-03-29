@@ -263,60 +263,45 @@ Include your CTA URL or handle if applicable:
 
 ## Output Schema: brand-profile.json
 
-After completing all stages, generate this JSON file:
+After completing all stages, generate this JSON file. These field paths MUST match exactly what `post-process.mjs` reads:
 
 ```json
 {
-  "version": "1.0",
-  "brand_name": "Acme Corp",
-  "description": "B2B SaaS platform for supply chain automation",
-  "industry": "SaaS",
-  "audience": "Startup founders and CTOs at Series A-C companies",
-  "voice_guidelines": "Confident but not arrogant. Data-driven. No buzzwords.",
-  "tone": "professional",
-
-  "visual_identity": {
-    "logo_path": null,
-    "logo_url": null,
+  "name": "Acme Corp",
+  "visual": {
     "colors": {
-      "text": "#FFFFFF",
+      "primary": "#1a1a1a",
       "accent": "#3B82F6",
+      "text": "#FFFFFF",
       "caption": "#999999",
-      "gradient_from": "#3B82F6",
-      "gradient_to": "#60A5FA"
+      "gradient": { "from": "#3B82F6", "to": "#60A5FA" }
     },
+    "fonts": { "primary": "Inter", "secondary": "Inter" },
     "background": {
       "style": "solid_dark",
-      "color": "#0A0A0A",
-      "gradient_from": null,
-      "gradient_to": null,
-      "hero_image": null,
-      "content_image": null
+      "color": "#1a1a1a",
+      "heroImage": null,
+      "contentImage": null
     },
-    "typography": {
-      "primary": "Inter",
-      "secondary": "Inter",
-      "custom_font_files": []
-    }
+    "canvas": {
+      "width": 1080, "height": 1350,
+      "headerHeight": 280, "contentStart": 300,
+      "footerStart": 1100,
+      "safeXMin": 140, "safeXMax": 920
+    },
+    "designMode": "dark"
   },
-
-  "content_preferences": {
+  "content": {
     "density": "balanced",
-    "default_slide_count": 5,
-    "preferred_frameworks": ["hero", "data_table", "bar_chart", "stack", "flow"],
-    "excluded_frameworks": [],
-    "cta_style": "direct",
-    "cta_details": "Book a demo at acme.com/demo"
+    "tone": "professional",
+    "frameworks": "auto",
+    "slideCount": { "default": 5, "range": [3, 10] }
   },
-
-  "canvas": {
-    "width": 1080,
-    "height": 1350,
-    "header_height": 150,
-    "footer_start": 1150,
-    "content_start": 280,
-    "safe_x_min": 140,
-    "safe_x_max": 920
+  "brand": {
+    "description": "B2B SaaS platform for supply chain automation",
+    "audience": "Startup founders and CTOs at Series A-C companies",
+    "voice": ["Confident but not arrogant", "Data-driven", "No buzzwords"],
+    "industry": "SaaS"
   }
 }
 ```
@@ -325,27 +310,36 @@ After completing all stages, generate this JSON file:
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `version` | string | yes | Schema version for future migrations |
-| `brand_name` | string | yes | Display name used in prompts |
-| `description` | string | yes | 1-2 sentence brand description |
-| `industry` | string | yes | Industry/niche for context |
-| `audience` | string | yes | Target audience description |
-| `voice_guidelines` | string | yes | How copy should sound |
-| `tone` | string | yes | One of: professional, conversational, bold, educational, inspirational, custom |
-| `visual_identity.colors.text` | hex | yes | Primary text color |
-| `visual_identity.colors.accent` | hex | yes | Brand highlight color |
-| `visual_identity.colors.caption` | hex | yes | Secondary/muted text color |
-| `visual_identity.colors.gradient_from` | hex | yes | Gradient start color |
-| `visual_identity.colors.gradient_to` | hex | yes | Gradient end color |
-| `visual_identity.background.style` | string | yes | solid_dark, solid_light, gradient, image, split_image |
-| `visual_identity.typography.primary` | string | yes | Headline font family name |
-| `visual_identity.typography.secondary` | string | yes | Body font family name |
-| `content_preferences.density` | string | yes | minimal, balanced, dense |
-| `content_preferences.default_slide_count` | number | yes | 3, 5, 7, 10, or 0 for auto |
-| `content_preferences.preferred_frameworks` | array | yes | Frameworks to favor |
-| `content_preferences.excluded_frameworks` | array | yes | Frameworks to avoid |
-| `content_preferences.cta_style` | string | yes | direct, engagement, soft, question, none |
-| `canvas.*` | number | yes | Pixel dimensions for safe zone calculation |
+| `name` | string | yes | Display name used in prompts |
+| `visual.colors.primary` | hex | yes | Background / primary dark color |
+| `visual.colors.accent` | hex | yes | Brand highlight color |
+| `visual.colors.text` | hex | yes | Primary text color |
+| `visual.colors.caption` | hex | yes | Secondary/muted text color |
+| `visual.colors.gradient.from` | hex | yes | Gradient start color |
+| `visual.colors.gradient.to` | hex | yes | Gradient end color |
+| `visual.fonts.primary` | string | yes | Headline font family name |
+| `visual.fonts.secondary` | string | yes | Body font family name |
+| `visual.background.style` | string | yes | solid_dark, solid_light, gradient, image, ai_generated |
+| `visual.background.color` | hex | yes | Solid fallback background color |
+| `visual.background.heroImage` | string | no | Path to hero slide background image |
+| `visual.background.contentImage` | string | no | Path to content slide background image |
+| `visual.canvas.width` | number | yes | Canvas width in pixels |
+| `visual.canvas.height` | number | yes | Canvas height in pixels |
+| `visual.canvas.headerHeight` | number | yes | Bottom of header/logo zone |
+| `visual.canvas.contentStart` | number | yes | First allowed y-position for content |
+| `visual.canvas.footerStart` | number | yes | Top of footer/branding zone |
+| `visual.canvas.safeXMin` | number | yes | Left content boundary |
+| `visual.canvas.safeXMax` | number | yes | Right content boundary |
+| `visual.designMode` | string | yes | "dark" or "light" |
+| `content.density` | string | yes | minimal, balanced, dense |
+| `content.tone` | string | yes | educational, professional, casual, bold, custom |
+| `content.frameworks` | string/array | yes | Framework preferences or "auto" |
+| `content.slideCount.default` | number | yes | Default number of slides |
+| `content.slideCount.range` | array | yes | [min, max] slide count range |
+| `brand.description` | string | yes | 1-2 sentence brand description |
+| `brand.audience` | string | yes | Target audience description |
+| `brand.voice` | array | yes | Voice guideline strings |
+| `brand.industry` | string | yes | Industry/niche for context |
 
 ### Canvas Defaults
 
@@ -355,11 +349,11 @@ The default canvas values assume a standard Instagram carousel (1080x1350):
 |---|---|---|
 | `width` | 1080 | Canvas width in pixels |
 | `height` | 1350 | Canvas height in pixels |
-| `header_height` | 150 | Bottom of header/logo zone |
-| `footer_start` | 1150 | Top of footer/branding zone |
-| `content_start` | 280 | First allowed y-position for content (below header + buffer) |
-| `safe_x_min` | 140 | Left content boundary |
-| `safe_x_max` | 920 | Right content boundary |
+| `headerHeight` | 280 | Bottom of header/logo zone |
+| `contentStart` | 300 | First allowed y-position for content (below header + buffer) |
+| `footerStart` | 1100 | Top of footer/branding zone |
+| `safeXMin` | 140 | Left content boundary |
+| `safeXMax` | 920 | Right content boundary |
 
 These can be customized for different aspect ratios (e.g., LinkedIn carousels at 1080x1080, or presentation decks at 1920x1080).
 

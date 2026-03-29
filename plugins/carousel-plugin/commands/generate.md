@@ -30,6 +30,8 @@ Read the strategy system prompt from `prompts/strategy-system.md` (located in th
 - `{{TONE}}` → brand.content.tone
 - `{{DENSITY}}` → brand.content.density
 - `{{SLIDE_COUNT}}` → user's requested count or brand.content.slideCount.default
+- `{{PREFERRED_FRAMEWORKS}}` → brand.content.frameworks (or "auto" if not set)
+- `{{EXCLUDED_FRAMEWORKS}}` → brand.content.excludedFrameworks (or [] if not set)
 
 Then follow that prompt yourself to generate the content strategy JSON. You ARE the strategist — think carefully about:
 - Narrative arc across slides
@@ -38,6 +40,39 @@ Then follow that prompt yourself to generate the content strategy JSON. You ARE 
 - Headlines that use the user's terminology
 
 Output a JSON object with the strategy. Report to the user: "Strategy complete — generating {N} slides with frameworks: {list frameworks}"
+
+## Template Variable Filling
+
+Before calling Gemini, fill ALL placeholders in the visual system prompt and framework instructions:
+
+| Placeholder | Source (brand-profile.json path) | Default |
+|------------|--------------------------------|---------|
+| {{FONT_PRIMARY}} | visual.fonts.primary | Inter |
+| {{FONT_SECONDARY}} | visual.fonts.secondary | Inter |
+| {{COLOR_TEXT}} | visual.colors.text | #FFFFFF |
+| {{COLOR_ACCENT}} | visual.colors.accent | (required) |
+| {{COLOR_CAPTION}} | visual.colors.caption | #999999 |
+| {{GRADIENT_FROM}} | visual.colors.gradient.from | visual.colors.accent |
+| {{GRADIENT_TO}} | visual.colors.gradient.to | #FFFFFF |
+| {{BACKGROUND_COLOR}} | visual.background.color | #1a1a1a |
+| {{DESIGN_MODE}} | visual.designMode | dark |
+| {{CONTENT_START}} | visual.canvas.contentStart | 300 |
+| {{FOOTER_START}} | visual.canvas.footerStart | 1100 |
+| {{SAFE_X_MIN}} | visual.canvas.safeXMin | 140 |
+| {{SAFE_X_MAX}} | visual.canvas.safeXMax | 920 |
+| {{CANVAS_WIDTH}} | visual.canvas.width | 1080 |
+| {{CANVAS_HEIGHT}} | visual.canvas.height | 1350 |
+| {{TOPIC}} | from user input | (required) |
+| {{HEADLINE}} | from strategy slide data | (per slide) |
+| {{FRAMEWORK}} | from strategy slide data | (per slide) |
+| {{DATA_POINTS}} | from strategy slide data | (per slide) |
+| {{FRAMEWORK_INSTRUCTIONS}} | from frameworks.md | (per framework) |
+| {{PREFERRED_FRAMEWORKS}} | content.frameworks | auto |
+| {{EXCLUDED_FRAMEWORKS}} | content.excludedFrameworks | [] |
+
+### Derived values (compute from brand profile):
+- {{GLASS_FILL}}: If designMode="dark" → COLOR_TEXT. If "light" → BACKGROUND_COLOR
+- {{GLASS_OPACITY}}: If dark → 0.04. If light → 0.06
 
 ## Step 2: SVG Generation (Gemini via OpenRouter)
 
@@ -68,7 +103,7 @@ Headers:
 Authorization: Bearer {OPENROUTER_API_KEY}
 Content-Type: application/json
 HTTP-Referer: https://github.com/nodeagencyai/Carousel-plugin-claude
-X-Title: NODE Carousel Generator
+X-Title: Carousel Generator
 ```
 
 After each slide completes:
@@ -100,33 +135,7 @@ The post-processing script handles:
 
 Skip this step if the user passed `--skip-validation`.
 
-This is the quality gate — the same approach the original NODE carousel generator uses with Opus, except YOU are Opus already running in Claude Code. No extra API cost.
-
-For each `slide-{N}.svg`, read the file and validate + fix:
-
-### 4a. Remove background shapes
-Check for and remove any remaining full-canvas rectangles that Gemini may have added inside the content group. Look for `<rect>` elements with width >= 1000 and height >= 1300, or with fill="#000000"/"black". Remove them using the Edit tool.
-
-### 4b. Fix SVG structure
-Review the SVG content inside the `<g id="content">` group for:
-- Unclosed or improperly nested tags — fix them
-- Duplicate `<defs>` or `<style>` blocks that Gemini snuck in — remove them (the wrapper already has these)
-
-### 4c. Reduce gradient overuse
-Count elements using `fill="url(#brandGradient)"` or `fill="url(#nodeSilver)"`. If more than 2 elements use gradient:
-- Keep gradient on the 1-2 most important elements (hero keyword, primary data point)
-- Change the rest to `fill="#FFFFFF"` (pure white)
-
-### 4d. Ensure generous spacing
-Check that major text elements have at least 60px vertical gap between them. If elements are too close (< 40px gap), adjust y-coordinates to add breathing room.
-
-### 4e. Fix ALL CAPS
-Find any text content that is fully uppercase (more than 3 consecutive uppercase words). Convert to Title Case.
-
-### 4f. Final safe zone check
-Verify no elements have y < 300 or y > 1100. If any remain after post-processing, fix with Edit tool.
-
-After fixing, if you made any edits, re-run the post-process script to ensure the SVG wrapper is intact.
+post-process.mjs handles programmatic validation (gradient capping, ALL CAPS, safe zones, font enforcement). After it runs, read each final SVG and do a quick visual sanity check. Fix only obvious remaining issues.
 
 Report for each slide: "Slide {N} — {passed validation | fixed: brief description}"
 

@@ -22,7 +22,7 @@ Create a temporary HTML file at `./carousels/.preview.html` with this structure:
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Carousel Preview — NODE Carousel Generator</title>
+  <title>Carousel Preview</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -87,7 +87,7 @@ Create a temporary HTML file at `./carousels/.preview.html` with this structure:
     {for each slide: <div class="slide-card"><img src="slide-{N}.svg" alt="Slide {N}"><div class="slide-label">Slide {N}</div></div>}
   </div>
   <div class="footer">
-    Built with <a href="https://github.com/nodeagencyai/Carousel-plugin-claude">NODE Carousel Generator</a> for Claude Code
+    Built with <a href="https://github.com/nodeagencyai/Carousel-plugin-claude">Carousel Generator</a> for Claude Code
   </div>
 </body>
 </html>

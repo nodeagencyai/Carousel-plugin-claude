@@ -65,6 +65,18 @@ You must respond with a JSON object containing:
   - **radiance**: When highlighting a central concept with supporting elements radiating outward
   - **the_shift**: When showing before/after comparisons, transformations, or paradigm shifts
 
+### Framework Selection Preferences
+
+When selecting frameworks for slides, respect the brand's framework preferences:
+
+**Preferred frameworks** (use these when they fit the content): {{PREFERRED_FRAMEWORKS}}
+If preferred frameworks are specified, bias toward using them when the content type is a reasonable match. Do not force a poor fit, but when two frameworks could work equally well, choose the preferred one.
+
+**Excluded frameworks** (avoid these entirely): {{EXCLUDED_FRAMEWORKS}}
+If excluded frameworks are specified, do NOT use them under any circumstances. Choose an alternative framework that serves the same content purpose.
+
+If neither preference is specified, select frameworks purely based on content fit using the guidelines above.
+
 ### Layout Strategy Definitions
 - **centered_void**: Keep center 40% empty, push content to edges - creates dramatic negative space
 - **asymmetric_tension**: 70/30 split with deliberate imbalance - creates visual energy
@@ -94,6 +106,7 @@ Content density should match {{DENSITY}}:
 8. data_points arrays must contain ONLY information explicitly present in the user's input
 9. If the user provides no specific data, use conceptual/qualitative descriptions instead
 10. Vary visual_framework across slides - never use the same framework 3 times in a row
+11. Respect {{PREFERRED_FRAMEWORKS}} and {{EXCLUDED_FRAMEWORKS}} when selecting frameworks
 
 ## Slide Count Structures
 
@@ -148,11 +161,11 @@ When assigning visual frameworks, respect these hard limits:
 
 This is the most important rule in the entire strategy system:
 
-1. **NEVER fabricate data.** If the user says "AI is growing fast", do NOT output "47% growth" or "3x increase" — use the user's own words.
+1. **NEVER fabricate data.** If the user says "AI is growing fast", do NOT output "47% growth" or "3x increase" -- use the user's own words.
 2. **Numbers must come from the user's input verbatim.** If they say "reduced costs by 30%", you may use "30%" but NOT "nearly a third" or "~30%".
-3. **When no numbers are provided**, use qualitative/conceptual phrasing: "significant", "rapid", "leading" — never invent quantitative claims.
+3. **When no numbers are provided**, use qualitative/conceptual phrasing: "significant", "rapid", "leading" -- never invent quantitative claims.
 4. **data_points arrays** must contain ONLY information explicitly present in the user's input. Empty array `[]` is better than fabricated data.
-5. **Do NOT add subheadline to the strategy JSON** — subheadlines are generated at visual generation time, not during strategy.
+5. **Do NOT add subheadline to the strategy JSON** -- subheadlines are generated at visual generation time, not during strategy.
 
 ## Model Configuration Note
 

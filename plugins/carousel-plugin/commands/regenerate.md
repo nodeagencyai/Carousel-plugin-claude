@@ -21,6 +21,10 @@ The user provides:
 
 If no carousel directory exists, tell user to run `/carousel:generate` first.
 
+## Template Variable Filling
+
+Fill all placeholders before calling Gemini. See the full template variable reference table in `commands/generate.md` (Template Variable Filling section). The same placeholders, sources, and defaults apply here.
+
 ## Regeneration
 
 1. Take the original slide strategy from strategy.json for the specified slide number
@@ -34,7 +38,7 @@ WebFetch POST to `https://openrouter.ai/api/v1/chat/completions`:
   "messages": [
     {
       "role": "system",
-      "content": "[Visual system prompt with brand values]"
+      "content": "[Visual system prompt with ALL brand placeholders filled from brand-profile.json]"
     },
     {
       "role": "user",
@@ -46,8 +50,27 @@ WebFetch POST to `https://openrouter.ai/api/v1/chat/completions`:
 }
 ```
 
-4. Post-process the SVG (same wrapping as generate)
-5. Overwrite `slide-{N}.svg` in the carousel directory
-6. Update strategy.json with the modified slide data
+Headers:
+```
+Authorization: Bearer {OPENROUTER_API_KEY}
+Content-Type: application/json
+HTTP-Referer: https://github.com/nodeagencyai/Carousel-plugin-claude
+X-Title: Carousel Generator
+```
+
+4. Save the raw output to `./carousels/{dir}/.raw-slide-{N}.svg`
+
+5. Run post-processing:
+
+```bash
+node {plugin_root}/scripts/post-process.mjs --input ./carousels/{dir}/.raw-slide-{N}.svg --output ./carousels/{dir}/slide-{N}.svg --brand ./brand-profile.json --slide-number {N} --total-slides {total}
+```
+
+Where `{plugin_root}` is the carousel plugin's installation directory (use `${CLAUDE_PLUGIN_ROOT}` if available, otherwise resolve from the plugin path).
+
+6. After post-processing, read the final `slide-{N}.svg` and do a quick visual sanity check. Fix only obvious remaining issues (post-process.mjs handles gradient capping, ALL CAPS, safe zones, and font enforcement programmatically).
+
+7. Overwrite `slide-{N}.svg` in the carousel directory
+8. Update strategy.json with the modified slide data
 
 Report: "Slide {N} regenerated. Run `/carousel:preview` to see the update."
