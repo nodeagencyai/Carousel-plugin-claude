@@ -38,10 +38,33 @@ Ask these questions ONE AT A TIME:
    - Also derive: text color (usually white on dark, or dark on light), caption color (muted version)
    - Generate a gradient from the accent color (lighter/darker variants)
 
-3. **Background style** — "What background style do you want for your slides?"
-   - Solid dark color (most professional, recommended)
-   - Gradient background
-   - Custom image (user provides path to PNG/JPG)
+3. **Background** — "How do you want your slide backgrounds?"
+   Present three clear options:
+
+   **Option A: Upload your own** — User provides a path to a PNG/JPG image file. Ask if they want separate backgrounds for the hero slide (slide 1) and content slides (slides 2+), or the same for all. Save the file path(s) in brand-profile.json.
+
+   **Option B: Generate a gradient** — Create a gradient background SVG from their brand colors. Offer styles:
+   - Linear dark-to-darker (e.g., primary color at 80% darkness → 95% darkness)
+   - Radial glow (subtle accent color glow from center on dark base)
+   - Diagonal sweep (accent color at low opacity sweeping corner to corner)
+
+   Generate the SVG background file(s), save to `./brand-assets/backgrounds/hero-bg.svg` and `content-bg.svg`, and reference in brand-profile.json. Example gradient SVG:
+   ```xml
+   <svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350">
+     <defs>
+       <radialGradient id="glow" cx="50%" cy="40%" r="60%">
+         <stop offset="0%" stop-color="{accent}" stop-opacity="0.15"/>
+         <stop offset="100%" stop-color="{primary}" stop-opacity="0"/>
+       </radialGradient>
+     </defs>
+     <rect width="1080" height="1350" fill="{primary_darkened}"/>
+     <rect width="1080" height="1350" fill="url(#glow)"/>
+   </svg>
+   ```
+
+   **Option C: AI-generate a branded background** — Call Gemini via OpenRouter to generate a custom textured/patterned background based on brand identity. Prompt Gemini to create a subtle, non-distracting SVG background with brand-appropriate textures (geometric patterns, noise, grain, mesh gradients). Save generated SVGs to `./brand-assets/backgrounds/`. Generate both hero and content variants.
+
+   For all options, also ask: "Same background for all slides, or different for the opening slide vs. content slides?"
 
 4. **Fonts** — "What fonts should we use?"
    - Primary font (headlines) — Google Font name or system font
@@ -99,10 +122,11 @@ After collecting all answers, generate the `brand-profile.json` file in the proj
       "secondary": "Inter"
     },
     "background": {
-      "style": "solid",
+      "style": "gradient",
       "color": "#1a1a1a",
-      "heroImage": null,
-      "contentImage": null
+      "gradientStyle": "radial_glow",
+      "heroImage": "./brand-assets/backgrounds/hero-bg.svg",
+      "contentImage": "./brand-assets/backgrounds/content-bg.svg"
     },
     "logo": null,
     "canvas": { "width": 1080, "height": 1350 }
