@@ -352,10 +352,22 @@ function enforceFonts(svgStr, brandProfile) {
 cleanContent = enforceFonts(cleanContent, brand);
 
 // ---------------------------------------------------------------------------
-// Step 4f — Rename nodeSilver -> brandGradient
+// Step 4f — Replace ALL custom gradient references with brandGradient
 // ---------------------------------------------------------------------------
+// Gemini creates its own gradients (heroGlow, subtleWarm, contentGlow, etc.)
+// but we strip their <defs>, so those references point to nothing.
+// Replace ANY url(#...) gradient reference that isn't brandGradient or a
+// known wrapper gradient (bgGlow, bgSweep, bgLinear) with brandGradient.
 
-cleanContent = cleanContent.replace(/url\(#nodeSilver\)/g, 'url(#brandGradient)');
+function replaceCustomGradients(svgStr) {
+  const knownGradients = new Set(['brandGradient', 'bgGlow', 'bgSweep', 'bgLinear']);
+  return svgStr.replace(/url\(#([^)]+)\)/g, (match, id) => {
+    if (knownGradients.has(id)) return match;
+    return 'url(#brandGradient)';
+  });
+}
+
+cleanContent = replaceCustomGradients(cleanContent);
 
 // ---------------------------------------------------------------------------
 // Step 5 — Color mixing helper
