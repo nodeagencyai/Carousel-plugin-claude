@@ -1,6 +1,6 @@
 ---
-name: setup
-description: Configure your brand identity for carousel generation. Interactive wizard that sets up colors, fonts, tone, and brand DNA. Run this before generating your first carousel.
+name: carousel:setup
+description: Configure your brand identity for carousel generation. Interactive wizard that sets up colors, fonts, tone, and brand DNA.
 ---
 
 # Carousel Brand Setup Wizard

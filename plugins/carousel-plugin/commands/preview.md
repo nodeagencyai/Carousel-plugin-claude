@@ -1,6 +1,6 @@
 ---
-name: preview
-description: Preview your most recent carousel in the browser. Opens all slides in a visual layout using Playwright.
+name: carousel:preview
+description: Preview your most recent carousel in the browser. Opens all slides in a visual layout.
 ---
 
 # Carousel Preview

@@ -1,6 +1,7 @@
 ---
-name: generate
-description: Generate a carousel from a topic. Requires brand setup first (/carousel:setup). Uses AI to create professional SVG carousel slides. Usage: /carousel:generate "Your topic here"
+name: carousel:generate
+description: Generate a carousel from a topic. Requires brand setup first (/carousel:setup). Uses AI to create professional SVG carousel slides.
+argument-hint: "Your topic here"
 ---
 
 # Carousel Generation

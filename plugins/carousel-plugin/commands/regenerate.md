@@ -1,6 +1,7 @@
 ---
-name: regenerate
-description: Regenerate a specific slide in your last carousel with custom instructions. Usage: /carousel:regenerate slide 3 "make it a bar chart instead"
+name: carousel:regenerate
+description: Regenerate a specific slide in your last carousel with custom instructions.
+argument-hint: slide 3 "make it a bar chart instead"
 ---
 
 # Slide Regeneration
