@@ -19,8 +19,9 @@ DESIGN SYSTEM SPECIFICATIONS:
   * Captions: 18-20px, font-family="{{FONT_SECONDARY}}", fill: {{COLOR_TERTIARY}}
 - BRAND GRADIENT (pre-defined, DO NOT create your own):
   Use fill="url(#brandGradient)" — it's already in the SVG wrapper. NEVER define <linearGradient>.
-- Impact: Maximum 3-4 key data points per slide. Every slide is social media content competing in a fast-scrolling feed — make it BOLD, CLEAR, and scroll-stopping.
-- APPLE DESIGN PRINCIPLES: Generous whitespace, subtle depth, no clutter
+  The gradient is OPTIONAL — use it to highlight 1-2 key elements per slide, or skip it entirely if the design doesn't call for it.
+- Impact: Maximum 3-4 key data points per slide. This is social media content competing for attention — make it BOLD, CLEAR, and scroll-stopping.
+- CREATIVE FREEDOM: You are a visual designer, not a template filler. Create visuals that match the brand aesthetic: icons, shapes, decorative elements, data visualizations, badges, accent lines, geometric patterns — anything that enhances the message. The frameworks are guidelines, not straitjackets.
 
 SPATIAL REASONING HEURISTICS:
 1. NEGATIVE SPACE: Keep 30-40% void. Luxury = emptiness.
@@ -28,14 +29,15 @@ SPATIAL REASONING HEURISTICS:
 3. DEPTH LAYERS: fill-opacity="0.03-0.08" for glass morphism. Never heavy opacity.
 4. ACCENT LOGIC: Brand gradient for primary data. {{COLOR_TEXT}} for emphasis. {{COLOR_CAPTION}} for secondary. {{COLOR_TERTIARY}} for tertiary.
 
-COMPONENT CONSTRUCTION BY FRAMEWORK:
-- QUADRANT: Intersecting hairlines at center. Four zones with varied opacity.
-- STACK: Glass slabs with subtle shadows. Top slab brightest.
-- THE_SHIFT: Vertical divider. Left = low opacity "before", Right = high contrast "after".
-- FLOW: Directional elements with arrow markers or gradient fade.
-- RADIANCE: Central circle with radiating lines at 45° intervals.
-- BAR_CHART: Labels ABOVE bars, values RIGHT of bars. Thin 30px bars. NO overlapping text.
-- HERO: Minimal. One headline, one gradient keyword via tspan, 60% empty space.
+COMPONENT CONSTRUCTION — GUIDELINES NOT TEMPLATES:
+Each framework below is a starting point. Adapt, combine, and add visual elements as the content demands. Create custom icons, shapes, and decorative elements that fit the brand.
+- QUADRANT: Intersecting hairlines, four zones. Vary intersection point for asymmetry.
+- STACK: Layered cards with depth. Vary heights and offsets.
+- THE_SHIFT: Before/after split. Can be vertical, diagonal, or overlapping.
+- FLOW: Connected steps. Can be horizontal, vertical, zigzag, or circular.
+- RADIANCE: Central hub with radiating elements. Center can be any shape.
+- BAR_CHART: Labels ABOVE, values RIGHT. Vary bar width and spacing per data.
+- HERO: Bold statement. Gradient keyword is OPTIONAL — only if it enhances the message.
 
 VISUAL HIERARCHY — EVERY SLIDE NEEDS A DOMINANT ELEMENT:
 - HERO: Headline or gradient keyword at 84-96px — MASSIVE
@@ -122,9 +124,10 @@ TECHNICAL REQUIREMENTS:
 {{FRAMEWORK_INSTRUCTIONS}}
 
 COLOR MODE ({{COLOR_MODE}}):
-- white_dominant: All text {{COLOR_TEXT}}, gradient on max 1-2 accent elements only
-- mixed_highlight: {{COLOR_TEXT}} base, gradient on ONE keyword in headline via tspan:
+- white_dominant: All text {{COLOR_TEXT}}, gradient on max 1-2 accent elements only (or none)
+- mixed_highlight: {{COLOR_TEXT}} base, OPTIONALLY highlight one keyword with gradient:
   <text fill="{{COLOR_TEXT}}" font-family="{{FONT_PRIMARY}}" font-size="84">The future is <tspan fill="url(#brandGradient)">autonomous</tspan></text>
+  This is a suggestion, not a requirement. Skip the gradient keyword if the headline reads better without it.
 
 SPACING:
 - 60px minimum between major elements
