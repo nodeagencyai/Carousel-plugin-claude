@@ -491,21 +491,31 @@ function buildFinalSvg(innerContent, brandProfile, slideNum) {
       const resolvedBgPath = resolve(process.cwd(), bgImage);
       if (bgImage.endsWith('.svg')) {
         const bgSvgRaw = readFileSync(resolvedBgPath, 'utf-8');
-        // Namespace background gradient IDs to avoid collision with content
-        let bgContent = bgSvgRaw
+        let bgStripped = bgSvgRaw
           .replace(/<\?xml[^?]*\?>/, '')
           .replace(/<svg[^>]*>/, '')
           .replace(/<\/svg>/, '');
-        // Prefix gradient IDs with bg- to avoid collision
-        bgContent = bgContent.replace(/id="([^"]+)"/g, 'id="bg-$1"');
-        bgContent = bgContent.replace(/url\(#([^)]+)\)/g, 'url(#bg-$1)');
+
+        // Prefix all IDs with bg- to avoid collision with content gradients
+        bgStripped = bgStripped.replace(/id="([^"]+)"/g, 'id="bg-$1"');
+        bgStripped = bgStripped.replace(/url\(#([^)]+)\)/g, 'url(#bg-$1)');
+
+        // Extract <defs> from background SVG — they must go in the main <defs>, not inside <g>
+        const bgDefsMatch = bgStripped.match(/<defs>([\s\S]*?)<\/defs>/i);
+        if (bgDefsMatch) {
+          backgroundGradientDefs = bgDefsMatch[1]; // Merge into main <defs>
+          bgStripped = bgStripped.replace(/<defs>[\s\S]*?<\/defs>/gi, ''); // Remove from content
+        } else {
+          backgroundGradientDefs = '';
+        }
+
+        // What remains are the visual elements (rects referencing the gradients)
         backgroundXml = [
           `  <g id="background">`,
           `    <rect width="${width}" height="${height}" fill="${bgColor}"/>`,
-          `    ${bgContent}`,
+          `    ${bgStripped.trim()}`,
           `  </g>`,
         ].join('\n');
-        backgroundGradientDefs = ''; // Image overrides gradient
       } else {
         const imgBuffer = readFileSync(resolvedBgPath);
         const base64 = imgBuffer.toString('base64');
