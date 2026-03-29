@@ -1,8 +1,22 @@
 {
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "node-carousel-marketplace",
+  "description": "NODE Carousel Generator — AI-powered carousel generation for Claude Code",
+  "owner": {
+    "name": "NODE Agency",
+    "email": "hello@nodeagency.ai"
+  },
   "plugins": [
     {
       "name": "carousel-plugin",
-      "path": "."
+      "description": "Generate high-quality carousel graphics from any topic. Configure your brand identity once, then create professional SVG carousels with AI.",
+      "version": "1.0.0",
+      "author": {
+        "name": "NODE Agency",
+        "email": "hello@nodeagency.ai"
+      },
+      "source": ".",
+      "category": "content"
     }
   ]
 }
