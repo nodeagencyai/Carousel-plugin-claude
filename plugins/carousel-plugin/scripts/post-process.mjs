@@ -507,10 +507,10 @@ function buildFinalSvg(innerContent, brandProfile, slideNum) {
     .filter((f, i, a) => a.indexOf(f) === i) // dedupe
     .filter(f => !['Inter', 'Arial', 'Helvetica', 'sans-serif', 'serif', 'monospace'].includes(f))
     .map(f => f.replace(/\s+/g, '+'))
-    .join('&family=');
+    .join('&amp;family=');
 
   const fontImport = googleFonts
-    ? `@import url('https://fonts.googleapis.com/css2?family=${googleFonts}:wght@400;500;600;700;800;900&display=swap');`
+    ? `@import url('https://fonts.googleapis.com/css2?family=${googleFonts}:wght@400;500;600;700;800;900&amp;display=swap');`
     : '';
 
   // --- Assemble -------------------------------------------------------------
