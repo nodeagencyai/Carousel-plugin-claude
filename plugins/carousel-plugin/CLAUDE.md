@@ -1,43 +1,178 @@
 # NODE Carousel Generator Plugin
 
-## What This Plugin Does
+## DARK MODE DESIGN SYSTEM — READ THIS FIRST
 
-This plugin generates professional carousel slides using a two-phase AI pipeline via OpenRouter.
+This is a **dark-mode-only** design system. Every slide has a dark background with light text. If you are producing or reviewing output that has light/beige/cream backgrounds or dark text on light surfaces, something has gone wrong. Fix it immediately.
 
-**Phase 1 — Content Strategy (Claude Opus):** Takes a topic and generates structured slide briefs including content frameworks, headlines, body copy, and data objects. Output is a `strategy.json` file.
+**Hard rules:**
+- Background color: always dark (`#1a1a1a` or the brand profile's `visual.background.color`). NEVER white, beige, cream, light grey, or any light color.
+- Text color: always light — white (`#FFFFFF`), light grey, or silver. NEVER dark text.
+- Accent colors: muted metallic tones (silver, chrome, subtle brand gradient). NEVER bright orange, neon, or saturated colors.
+- The signature look is **brushed chrome/silver gradient text on a dark background** — think premium tech, not warm/friendly.
 
-**Phase 2 — Visual Rendering (Gemini Pro 3):** Takes each slide brief and generates SVG content per slide, producing individual `slide-N.svg` files.
+---
+
+## Pipeline Overview
+
+The plugin generates carousels in 4 steps. You (Claude) orchestrate steps 1, 3, and 4. Step 2 is the only paid API call.
+
+### Step 1: Content Strategy (YOU generate this)
+
+You produce a `strategy.json` with slide briefs: headlines, frameworks, data points, layout strategies.
+
+- Follow the system prompt in `prompts/strategy-system.md`
+- Call OpenRouter with model `anthropic/claude-opus-4` (temperature 0.7)
+- Output must be valid JSON with a `slides` array
+
+### Step 2: SVG Visual Generation (Gemini via OpenRouter — the ONLY paid call)
+
+For each slide, call OpenRouter with model `google/gemini-pro-3` to generate SVG content elements.
+
+**Building the Gemini prompt — you MUST do all of these:**
+
+1. Load the FULL system prompt from `prompts/visual-system.md`
+2. Fill every `{{PLACEHOLDER}}` with actual values from:
+   - The strategy slide brief (headline, framework, data_points, layout_strategy, etc.)
+   - The brand profile (`brand-profile.json` in user's project root)
+3. Load the matching framework section from `prompts/frameworks.md` and inject it as `{{FRAMEWORK_INSTRUCTIONS}}`
+4. Ensure these brand values are filled correctly:
+   - `{{FONT_PRIMARY}}` / `{{FONT_SECONDARY}}` from `visual.fonts`
+   - `{{COLOR_TEXT}}` from `visual.colors.text` — this MUST be a light color (white/silver)
+   - `{{COLOR_ACCENT}}` from `visual.colors.accent`
+   - `{{COLOR_CAPTION}}` from `visual.colors.caption`
+   - `{{BACKGROUND_STYLE}}` — always indicate dark background, no background rect in SVG
+
+**The visual-system.md prompt already contains dark-mode instructions and anti-patterns. Do NOT strip or summarize them. Send the full prompt to Gemini.**
+
+### Step 3: Post-Processing (script handles wrapping, gradients, background)
+
+Run the post-processing script for each slide:
+
+```bash
+node {plugin_root}/scripts/post-process.mjs \
+  --input raw-slide-N.svg \
+  --output slide-N.svg \
+  --brand brand-profile.json \
+  --slide-number N \
+  --total-slides T
+```
+
+The script outputs JSON to stdout: `{ success: true, output: "...", slideNumber: N }` or `{ success: false, error: "..." }`.
+
+**What post-process.mjs does:**
+- Strips any `<svg>`, `<defs>`, `<style>` wrappers Gemini may have added
+- Removes black background rectangles (Gemini often adds these despite instructions)
+- Fixes safe-zone violations (clamps coordinates to bounds)
+- Wraps content in a proper SVG envelope with:
+  - Dark background rect (from brand profile's `visual.background.color`, defaults to `#1a1a1a`)
+  - Font CSS with brand typography
+  - The chrome gradient definitions (`brandGradient` and `nodeSilver`)
+
+### Step 4: Validation and Fixing (YOU do this)
+
+After post-processing, read each final SVG and verify:
+- No content outside safe zone (y:300-1100, x:140-920)
+- No light/beige background elements remain
+- Gradient references (`url(#brandGradient)`, `url(#nodeSilver)`) are used correctly
+- Text is legible (light on dark, correct font sizes)
+- No ALL CAPS text anywhere
+
+If issues are found, edit the SVG directly to fix them.
+
+---
+
+## The Chrome Gradient
+
+The signature visual element is a 7-stop linear gradient that creates a brushed-metal/chrome effect. Post-process.mjs builds this from the brand profile's `visual.colors.gradient.from` and `visual.colors.gradient.to` values, interpolating intermediate stops automatically.
+
+Two gradient IDs are defined and available in the final SVG:
+- `url(#brandGradient)` — primary chrome gradient
+- `url(#nodeSilver)` — identical, alternate reference name
+
+**Gemini's SVG should reference these gradient IDs on accent elements.** Gemini must NOT define its own `<linearGradient>` or `<radialGradient>` — post-process.mjs provides them.
+
+**Usage rules:**
+- Apply gradient to maximum 1-2 elements per slide
+- Most text stays the primary text color (white/light)
+- Use gradient on the single most important data point or keyword
+- For hero slides: one keyword in the headline gets `<tspan fill="url(#brandGradient)">keyword</tspan>`
+
+---
+
+## Canvas and Safe Zones
+
+| Zone | Y Range | Purpose |
+|------|---------|---------|
+| Logo/Header | 0-280 | Reserved for logo — NO content here |
+| Content safe zone | 300-1100 | ALL content must be placed here |
+| Footer | 1100-1350 | Reserved — NO content here |
+
+- Canvas: 1080 x 1350px (portrait, Instagram/LinkedIn optimized)
+- Horizontal safe area: x=140 to x=920
+- Canvas center: x=530
+
+---
+
+## Brand Profile
+
+Brand identity is loaded from `brand-profile.json` in the user's project root. Key paths:
+
+| Value | JSON Path | Fallback |
+|-------|-----------|----------|
+| Background color | `visual.background.color` | `#1a1a1a` |
+| Text color | `visual.colors.text` | `#FFFFFF` |
+| Accent color | `visual.colors.accent` | — |
+| Caption color | `visual.colors.caption` | — |
+| Gradient from | `visual.colors.gradient.from` | accent color |
+| Gradient to | `visual.colors.gradient.to` | `#FFFFFF` |
+| Primary font | `visual.fonts.primary` | `Inter` |
+| Secondary font | `visual.fonts.secondary` | `Inter` |
+| Canvas width | `visual.canvas.width` | `1080` |
+| Canvas height | `visual.canvas.height` | `1350` |
+
+---
 
 ## API Configuration
 
-- **API Key Resolution:** Check the `OPENROUTER_API_KEY` environment variable first. If not set, fall back to plugin settings.
-- **All API calls** go to: `https://openrouter.ai/api/v1/chat/completions`
-- Phase 1 model: `anthropic/claude-opus-4` (content strategy)
-- Phase 2 model: `google/gemini-pro-3` (SVG rendering)
+- All API calls go to: `https://openrouter.ai/api/v1/chat/completions`
+- API key: check `OPENROUTER_API_KEY` env var first, then fall back to plugin settings
+- Phase 1 model: `anthropic/claude-opus-4`
+- Phase 2 model: `google/gemini-pro-3`
 
-## Brand Configuration
-
-Brand identity is stored in `brand-profile.json` in the user's project root. This file contains colors, fonts, logo references, tone of voice, and visual style preferences. The plugin reads this file before every generation run to ensure brand consistency.
+---
 
 ## Output Structure
 
-All generated carousels are saved to:
-
 ```
 ./carousels/{date}-{slug}/
-  strategy.json    # Full content strategy from Phase 1
-  slide-1.svg      # Individual slide files
+  strategy.json      # Content strategy from Phase 1
+  slide-1.svg        # Final post-processed slides
   slide-2.svg
+  ...
   slide-N.svg
 ```
 
-## Canvas Specifications
+---
 
-- **Canvas size:** 1080 x 1350px (portrait, optimized for Instagram/LinkedIn)
-- **Safe zone:** x: 140-920, y: 280-1150
-- All text and critical visual elements must stay within the safe zone.
+## Quality Checklist
+
+Before declaring a carousel complete, verify every slide against these rules:
+
+- [ ] Background is dark (not white, beige, cream, or light)
+- [ ] All text is light-colored (white, grey, silver) and readable
+- [ ] No ALL CAPS text — headlines use Title Case, body uses sentence case
+- [ ] No bright or saturated accent colors
+- [ ] Chrome gradient applied to max 1-2 elements per slide
+- [ ] 30-40% whitespace maintained
+- [ ] All content within safe zone (y:300-1100, x:140-920)
+- [ ] No invented data or statistics — only user-provided facts
+- [ ] No `<defs>`, `<style>`, or `<svg>` tags in Gemini's raw output
+- [ ] Post-process.mjs ran successfully for every slide
+
+---
 
 ## Content Rules
 
-- **Never invent data or statistics.** Only use facts, numbers, and data points that the user explicitly provides. If a slide brief calls for data and none was given, use a placeholder label like "[Your stat here]" or ask the user.
-- **Never use ALL CAPS.** Use Title Case for headlines and sentence case for body text. This applies to all generated text content without exception.
+- **Never invent data or statistics.** Only use facts and numbers the user explicitly provides. If none provided, use conceptual language ("significant growth", not "47% growth").
+- **Never use ALL CAPS.** Title Case for headlines, sentence case for body text. No exceptions.
+- **Data values must be consistent size** within a slide (pick one size between 40-48px for all data elements).
