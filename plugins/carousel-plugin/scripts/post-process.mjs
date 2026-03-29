@@ -122,35 +122,162 @@ function removeBlackRects(svgStr) {
 cleanContent = removeBlackRects(cleanContent);
 
 // ---------------------------------------------------------------------------
-// Step 4 — Fix safe-zone violations
+// Step 3b — Escape unescaped ampersands (breaks XML parsing)
+// ---------------------------------------------------------------------------
+
+function escapeAmpersands(svgStr) {
+  return svgStr.replace(/&(?!(?:amp|lt|gt|quot|apos|#\d+|#x[\da-fA-F]+);)/g, '&amp;');
+}
+
+cleanContent = escapeAmpersands(cleanContent);
+
+// ---------------------------------------------------------------------------
+// Step 3c — Fix unclosed tags (Gemini frequently forgets closing tags)
+// ---------------------------------------------------------------------------
+
+function fixUnclosedTags(svgStr) {
+  const voidElements = new Set([
+    'rect', 'circle', 'line', 'image', 'path', 'ellipse',
+    'polygon', 'polyline', 'use', 'stop', 'br', 'hr',
+    'fegaussianblur', 'fecomposite', 'fecolormatrix',
+    'feoffset', 'feblend', 'feflood', 'femergenode',
+    'femorphology', 'feturbulence', 'fedisplacementmap',
+    'feimage', 'fetile', 'fefuncr', 'fefuncg', 'fefuncb', 'fefunca',
+    'fedistantlight', 'fepointlight', 'fespotlight',
+    'animate', 'animatetransform', 'animatemotion', 'set',
+  ]);
+
+  const openTags = [];
+  const tagPattern = /<(\/?)([a-zA-Z]+)(?:\s[^>]*)?>|<([a-zA-Z]+)(?:\s[^>]*)?\/>/g;
+  let m;
+  while ((m = tagPattern.exec(svgStr)) !== null) {
+    if (m[3]) continue;
+    if (m[1]) {
+      const tagName = m[2];
+      if (openTags.length && openTags[openTags.length - 1] === tagName) openTags.pop();
+    } else {
+      const tagName = m[2];
+      if (!voidElements.has(tagName.toLowerCase())) openTags.push(tagName);
+    }
+  }
+  if (openTags.length > 0) {
+    svgStr = svgStr.trimEnd() + '\n' + openTags.reverse().map(t => `</${t}>`).join('');
+  }
+  return svgStr;
+}
+
+cleanContent = fixUnclosedTags(cleanContent);
+
+// ---------------------------------------------------------------------------
+// Step 4 — Fix safe-zone violations (proportional repositioning)
 // ---------------------------------------------------------------------------
 
 function fixSafeZone(svgStr, brandProfile) {
-  const headerHeight = brandProfile.visual?.canvas?.headerHeight || 280;
-  const contentStart = brandProfile.visual?.canvas?.contentStart || 300;
-  const footerStart = brandProfile.visual?.canvas?.footerStart || 1100;
-  const safeXMin = brandProfile.visual?.canvas?.safeXMin || 140;
-  const safeXMax = brandProfile.visual?.canvas?.safeXMax || 920;
+  const SAFE_Y_MIN = brandProfile.visual?.canvas?.contentStart || 300;
+  const SAFE_Y_MAX = brandProfile.visual?.canvas?.footerStart || 1100;
+  const SAFE_X_MIN = brandProfile.visual?.canvas?.safeXMin || 140;
+  const SAFE_X_MAX = brandProfile.visual?.canvas?.safeXMax || 920;
+  const PADDING = 20;
+  const SAFE_HEIGHT = SAFE_Y_MAX - SAFE_Y_MIN;
+  const SAFE_WIDTH = SAFE_X_MAX - SAFE_X_MIN;
 
-  // Fix y-coordinates on common SVG elements
-  svgStr = svgStr.replace(
-    /(<(?:text|rect|circle|ellipse|line|image|g)[^>]*\s)y=["'](-?\d+(?:\.\d+)?)["']/gi,
-    (match, prefix, y) => {
-      let yVal = parseFloat(y);
-      if (yVal < contentStart) yVal = contentStart;
-      if (yVal > footerStart) yVal = footerStart - 40;
-      return `${prefix}y="${yVal}"`;
+  // Collect all coordinates (skip values <= 5 — background elements)
+  const yAttrs = ['y', 'y1', 'y2', 'cy'];
+  const xAttrs = ['x', 'x1', 'x2', 'cx'];
+  const yValues = [];
+  const xValues = [];
+
+  for (const attr of yAttrs) {
+    const re = new RegExp(`\\s${attr}=["']?(\\d+(?:\\.\\d+)?)["']?`, 'gi');
+    let mt;
+    while ((mt = re.exec(svgStr)) !== null) {
+      const v = parseFloat(mt[1]);
+      if (v > 5) yValues.push(v);
     }
-  );
+  }
+  for (const attr of xAttrs) {
+    const re = new RegExp(`\\s${attr}=["']?(\\d+(?:\\.\\d+)?)["']?`, 'gi');
+    let mt;
+    while ((mt = re.exec(svgStr)) !== null) {
+      const v = parseFloat(mt[1]);
+      if (v > 5) xValues.push(v);
+    }
+  }
 
-  // Fix x-coordinates
+  if (yValues.length === 0) return svgStr;
+
+  const minY = Math.min(...yValues);
+  const maxY = Math.max(...yValues);
+  const contentHeight = maxY - minY;
+  const minX = xValues.length ? Math.min(...xValues) : SAFE_X_MIN;
+  const maxX = xValues.length ? Math.max(...xValues) : SAFE_X_MAX;
+  const contentWidth = maxX - minX;
+
+  const needsYFix = minY < SAFE_Y_MIN || maxY > SAFE_Y_MAX;
+  const needsXFix = minX < SAFE_X_MIN || maxX > SAFE_X_MAX;
+  if (!needsYFix && !needsXFix) return svgStr;
+
+  // Proportional scaling if content exceeds safe area
+  const availH = SAFE_HEIGHT - 2 * PADDING;
+  const availW = SAFE_WIDTH - 2 * PADDING;
+  const scaleY = contentHeight > availH ? availH / contentHeight : 1.0;
+  const scaleX = contentWidth > availW ? availW / contentWidth : 1.0;
+  const scale = Math.min(scaleY, scaleX);
+
+  // Offset to position content within safe zone
+  const xOffset = minX < SAFE_X_MIN ? SAFE_X_MIN + PADDING - minX : 0;
+  const yOffset = (SAFE_Y_MIN + PADDING) - (minY * scale);
+
+  function transformVal(val, isY) {
+    if (val <= 5) return val;
+    if (isY) return Math.max(SAFE_Y_MIN, Math.min(SAFE_Y_MAX - 50, (val * scale) + yOffset));
+    return Math.max(SAFE_X_MIN, Math.min(SAFE_X_MAX, val + xOffset));
+  }
+
+  // Transform y-type attributes
+  for (const attr of yAttrs) {
+    const re = new RegExp(`(\\s)${attr}=["'](\\d+(?:\\.\\d+)?)["']`, 'gi');
+    svgStr = svgStr.replace(re, (match, sp, val) => {
+      const old = parseFloat(val);
+      if (old <= 5) return match;
+      return `${sp}${attr}="${Math.round(transformVal(old, true))}"`;
+    });
+  }
+
+  // Transform x-type attributes
+  for (const attr of xAttrs) {
+    const re = new RegExp(`(\\s)${attr}=["'](\\d+(?:\\.\\d+)?)["']`, 'gi');
+    svgStr = svgStr.replace(re, (match, sp, val) => {
+      const old = parseFloat(val);
+      if (old <= 5) return match;
+      return `${sp}${attr}="${Math.round(transformVal(old, false))}"`;
+    });
+  }
+
+  // Scale width/height (not canvas-sized ones)
+  if (scale < 1.0) {
+    svgStr = svgStr.replace(/(\s)(width|height)=["'](\d+(?:\.\d+)?)["']/gi, (match, sp, attr, val) => {
+      const old = parseFloat(val);
+      if (old >= 1000) return match;
+      return `${sp}${attr}="${Math.round(old * scale)}"`;
+    });
+    // Scale font sizes (minimum 18px)
+    svgStr = svgStr.replace(/font-size=["']?(\d+(?:\.\d+)?)(px)?["']?/gi, (match, size, px) => {
+      return `font-size="${Math.max(18, Math.round(parseFloat(size) * scale))}${px || ''}"`;
+    });
+  }
+
+  // Handle transform="translate(x, y)"
   svgStr = svgStr.replace(
-    /(<(?:text|rect|circle|ellipse|line|image|g)[^>]*\s)x=["'](-?\d+(?:\.\d+)?)["']/gi,
-    (match, prefix, x) => {
-      let xVal = parseFloat(x);
-      if (xVal < safeXMin) xVal = safeXMin;
-      if (xVal > safeXMax) xVal = safeXMax;
-      return `${prefix}x="${xVal}"`;
+    /transform=["']translate\(([^,)]+)(?:,\s*([^)]+))?\)["']/gi,
+    (match, xStr, yStr) => {
+      try {
+        const oldX = parseFloat(xStr.trim());
+        const oldY = parseFloat((yStr || '0').trim());
+        const newX = oldX > 5 ? Math.round(oldX + xOffset) : oldX;
+        const newY = oldY > 5 ? Math.round((oldY * scale) + yOffset) : oldY;
+        return `transform="translate(${newX}, ${newY})"`;
+      } catch { return match; }
     }
   );
 
@@ -375,7 +502,7 @@ function buildFinalSvg(innerContent, brandProfile, slideNum) {
         const base64 = imgBuffer.toString('base64');
         const ext = bgImage.split('.').pop().toLowerCase();
         const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
-        backgroundXml = `  <image href="data:${mime};base64,${base64}" width="${width}" height="${height}"/>`;
+        backgroundXml = `  <image href="data:${mime};base64,${base64}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid slice"/>`;
       }
     } catch {
       // Fall back to solid colour — already set above
