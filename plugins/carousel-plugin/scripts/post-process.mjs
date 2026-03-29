@@ -533,10 +533,102 @@ ${innerContent}
 }
 
 // ---------------------------------------------------------------------------
+// Step 7 — XML validation (check the final SVG is parseable)
+// ---------------------------------------------------------------------------
+
+function validateXml(svgStr) {
+  const errors = [];
+
+  // Check basic structure
+  if (!svgStr.includes('<svg')) errors.push('Missing <svg> element');
+  if (!svgStr.includes('</svg>')) errors.push('Missing </svg> closing tag');
+
+  // Check for common XML errors
+  // Unmatched quotes in attributes
+  const badAttr = svgStr.match(/<[^>]*=["'][^"']*(?:<|$)/gm);
+  if (badAttr) errors.push(`Possible unclosed attribute quote (${badAttr.length} found)`);
+
+  // Check tag balance for non-void elements
+  const nonVoid = ['svg', 'g', 'text', 'tspan', 'defs', 'style', 'linearGradient',
+    'radialGradient', 'clipPath', 'mask', 'pattern', 'filter', 'femerge',
+    'fecomponenttransfer', 'marker', 'symbol', 'a', 'switch', 'foreignObject'];
+
+  for (const tag of nonVoid) {
+    const opens = (svgStr.match(new RegExp(`<${tag}[\\s>]`, 'gi')) || []).length;
+    const closes = (svgStr.match(new RegExp(`</${tag}>`, 'gi')) || []).length;
+    const selfClose = (svgStr.match(new RegExp(`<${tag}[^>]*/\\s*>`, 'gi')) || []).length;
+    const unmatched = opens - selfClose - closes;
+    if (unmatched > 0) errors.push(`Unclosed <${tag}> (${unmatched} unmatched)`);
+    if (unmatched < 0) errors.push(`Extra </${tag}> (${Math.abs(unmatched)} extra)`);
+  }
+
+  // Check for invalid characters that break XML
+  if (/[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(svgStr)) {
+    errors.push('Contains invalid XML control characters');
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+// ---------------------------------------------------------------------------
+// Step 8 — Fallback SVG (when Gemini fails completely)
+// ---------------------------------------------------------------------------
+
+function buildFallbackSvg(brandProfile, slideNum, totalSlides, errorMsg) {
+  const width = brandProfile.visual?.canvas?.width || 1080;
+  const height = brandProfile.visual?.canvas?.height || 1350;
+  const bgColor = brandProfile.visual?.background?.color || '#1a1a1a';
+  const textColor = brandProfile.visual?.colors?.text || '#FFFFFF';
+  const captionColor = brandProfile.visual?.colors?.caption || '#999999';
+  const fontPrimary = brandProfile.visual?.fonts?.primary || 'Inter';
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  <rect width="${width}" height="${height}" fill="${bgColor}"/>
+  <text x="${width / 2}" y="${height / 2 - 40}" text-anchor="middle"
+        font-family="${fontPrimary}, sans-serif" font-size="48" fill="${textColor}">
+    Slide ${slideNum}
+  </text>
+  <text x="${width / 2}" y="${height / 2 + 30}" text-anchor="middle"
+        font-family="${fontPrimary}, sans-serif" font-size="24" fill="${captionColor}">
+    Generation failed — please regenerate this slide
+  </text>
+  <text x="${width / 2}" y="${height / 2 + 70}" text-anchor="middle"
+        font-family="${fontPrimary}, sans-serif" font-size="18" fill="${captionColor}" opacity="0.5">
+    ${errorMsg || 'Unknown error'}
+  </text>
+</svg>`;
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
-const finalSvg = buildFinalSvg(cleanContent, brand, slideNumber);
+let finalSvg;
+
+try {
+  finalSvg = buildFinalSvg(cleanContent, brand, slideNumber);
+} catch (err) {
+  // If SVG build fails, use fallback
+  finalSvg = buildFallbackSvg(brand, slideNumber, totalSlides, err.message);
+}
+
+// Validate the final SVG
+const validation = validateXml(finalSvg);
+if (!validation.valid) {
+  // Try to fix remaining issues
+  let fixed = finalSvg;
+
+  // Remove invalid control characters
+  fixed = fixed.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+
+  // Re-validate
+  const recheck = validateXml(fixed);
+  if (recheck.valid) {
+    finalSvg = fixed;
+  }
+  // If still invalid, output anyway but warn (better than nothing)
+}
 
 // Ensure output directory exists
 mkdirSync(dirname(resolve(outputPath)), { recursive: true });
@@ -553,5 +645,6 @@ console.log(
     output: resolve(outputPath),
     slideNumber,
     totalSlides,
+    validation: validation.valid ? 'passed' : { warnings: validation.errors },
   })
 );

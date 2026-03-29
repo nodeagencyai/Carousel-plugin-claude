@@ -122,14 +122,20 @@ node {plugin_root}/scripts/post-process.mjs --input ./carousels/{dir}/.raw-slide
 Where `{plugin_root}` is the carousel plugin's installation directory (use `${CLAUDE_PLUGIN_ROOT}` if available, otherwise resolve from the plugin path).
 
 The post-processing script handles:
+- Ampersand escaping (`&` → `&amp;` for valid XML)
+- Unclosed tag repair (tracks open/close tags, appends missing closers)
+- Proportional safe zone repositioning (bounding box analysis, uniform scaling, offset — not just clamping)
+- Full-canvas rect removal (dark AND light fills, any rect >= 1000x1300)
+- Gradient overuse reduction (caps at 2 elements using `url(#brandGradient)`)
+- ALL CAPS → Title Case conversion (preserves abbreviations like AI, CEO)
+- Font enforcement (replaces hallucinated fonts with brand fonts)
 - Gradient injection (7-stop chrome gradient from brand colors)
-- Background embedding (solid color, SVG gradient, or raster image from brand profile)
-- Safe zone validation and coordinate clamping (y:300-1100, x:140-920)
-- Black rect removal (strips full-canvas black rectangles Gemini adds)
-- Font CSS injection
-- Proper SVG wrapping (xmlns, viewBox, width/height)
+- Background embedding (solid color, SVG gradient, or raster image)
+- SVG wrapping (xmlns, viewBox, defs, style, gradient definitions)
+- XML validation (tag balance, invalid characters, attribute quotes)
+- Fallback SVG generation on complete failure
 
-**If post-process.mjs fails**: Show the error to the user and fall back to the raw SVG file. Warn that the slide may need manual cleanup.
+**If post-process.mjs fails**: It generates a branded fallback slide instead of crashing. The output JSON includes `validation.warnings` if issues were found but the SVG is still usable.
 
 ## Step 4: Validation & Cleanup (YOU — Claude)
 
@@ -150,9 +156,26 @@ Report for each slide: "Slide {N} — {passed validation | fixed: brief descript
    - Suggest: "Run `/carousel:preview` to see your carousel in the browser"
    - Suggest: "Run `/carousel:regenerate` to modify any specific slide"
 
-## Error Handling
+## Error Handling & Retry Logic
 
-- If OpenRouter returns an error, show the error message and suggest checking the API key
-- If Gemini returns malformed SVG, retry once with the instruction "Return ONLY valid SVG content elements, no markdown, no svg wrapper"
-- If brand-profile.json is missing required fields, tell the user which fields and suggest re-running /carousel:setup
-- If post-process.mjs fails, show the error and fall back to the raw SVG
+### Retry with exponential backoff
+If a Gemini WebFetch call fails, retry up to 3 times with increasing delays:
+- **Attempt 1**: Immediate
+- **Attempt 2**: Wait 2 seconds, then retry
+- **Attempt 3**: Wait 5 seconds, then retry
+
+Check the response for these specific cases:
+- **429 (Rate Limited)**: Always retry with backoff — this is temporary
+- **500/502/503 (Server Error)**: Retry with backoff — OpenRouter may be temporarily down
+- **401 (Unauthorized)**: Do NOT retry — API key is invalid. Tell user to check their `OPENROUTER_API_KEY`
+- **400 (Bad Request)**: Do NOT retry — the prompt is malformed. Show the error
+
+### Malformed SVG recovery
+If Gemini returns something that isn't SVG (e.g., explanation text, markdown, or empty):
+1. Retry once with simplified instruction: "Return ONLY valid SVG content elements. No markdown, no code fences, no explanations. Just SVG tags: text, rect, circle, path, g, tspan, line."
+2. If retry also fails, post-process.mjs will generate a branded fallback slide showing "Slide N — Generation failed, please regenerate"
+
+### Other errors
+- If brand-profile.json is missing required fields, tell the user which fields and suggest re-running `/carousel:setup`
+- If post-process.mjs fails, it outputs a JSON error. Show it to the user and note the fallback was used
+- If post-process.mjs reports `validation.warnings`, mention them but don't block — the SVG is still usable
