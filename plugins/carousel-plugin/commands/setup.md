@@ -24,6 +24,21 @@ If yes:
 - Pre-fill the brand profile with detected values
 - Present findings and ask the user to confirm or adjust
 
+If no: proceed to the next step.
+
+## Reference Carousel Analysis (Optional)
+
+Ask: "Do you have any existing carousels you'd like me to analyze for style? Upload images or provide file paths and I'll extract your visual patterns."
+
+If yes:
+- User provides paths to carousel images (PNG/JPG/SVG)
+- Read/view each image file using the Read tool (which supports viewing images)
+- Extract and analyze: color palette, typography style (serif/sans-serif, weight, size patterns), layout patterns (centered, left-aligned, grid-based), text density level, overall tone and mood
+- Use these observations to pre-fill the brand profile values before Stage 1
+- Present findings to the user: "Based on your existing carousels, I see: [e.g., dark backgrounds, bold sans-serif headlines, minimal text density, data-heavy frameworks, accent color highlights on key metrics...]"
+- User confirms or adjusts the detected patterns
+- Carry these values forward into the Stage 1 questions (pre-filling answers where the analysis provides clear signals)
+
 If no: proceed to manual setup.
 
 ## Stage 1: Visual Identity

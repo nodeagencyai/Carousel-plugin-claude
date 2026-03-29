@@ -32,8 +32,7 @@ You must respond with a JSON object containing:
       "number": 1,
       "purpose": "slide purpose",
       "headline": "slide headline using user's terminology",
-      "subheadline": "supporting text",
-      "visual_framework": "one of: hero, data_table, bar_chart, quadrant, stack, flow, radiance",
+      "visual_framework": "one of: hero, data_table, bar_chart, quadrant, stack, flow, radiance, the_shift",
       "data_points": ["ONLY data explicitly from user input"],
       "layout_strategy": "centered_void | asymmetric_tension | golden_ratio | modular_grid",
       "visual_weight": "top_heavy | balanced | bottom_anchored",
@@ -59,11 +58,12 @@ You must respond with a JSON object containing:
 - Use "white_dominant" color_mode by default (gradient/accent on max 1-2 elements)
 - Match framework to content type:
   - **data_table**: When presenting structured comparisons or feature lists
-  - **bar_chart**: When showing quantitative comparisons (ONLY if user provided actual comparable values)
+  - **bar_chart**: When showing quantitative comparisons (ONLY if user provided actual comparable values). **Maximum 3 bars.**
   - **quadrant**: When comparing along two dimensions (e.g., effort vs. impact)
-  - **stack**: When showing layered concepts, hierarchies, or progressive steps
+  - **stack**: When showing layered concepts, hierarchies, or progressive steps. **Maximum 3 layers.**
   - **flow**: When illustrating processes, timelines, or sequential progression
   - **radiance**: When highlighting a central concept with supporting elements radiating outward
+  - **the_shift**: When showing before/after comparisons, transformations, or paradigm shifts
 
 ### Layout Strategy Definitions
 - **centered_void**: Keep center 40% empty, push content to edges - creates dramatic negative space
@@ -136,5 +136,26 @@ Analyze the topic and details to determine the optimal slide count (3, 5, 7, or 
 - Complexity of the topic
 - Target audience attention span
 - Whether the content is educational, promotional, or thought leadership
+
+## Framework Constraints (IMPORTANT)
+
+When assigning visual frameworks, respect these hard limits:
+- **bar_chart**: Maximum 3 bars. If more than 3 data points need comparison, split across slides or use data_table instead.
+- **stack**: Maximum 3 layers. If more than 3 tiers are needed, consolidate or use flow instead.
+- **the_shift**: Maximum 4 comparison pairs per slide.
+
+## Data Fidelity (STRICT)
+
+This is the most important rule in the entire strategy system:
+
+1. **NEVER fabricate data.** If the user says "AI is growing fast", do NOT output "47% growth" or "3x increase" — use the user's own words.
+2. **Numbers must come from the user's input verbatim.** If they say "reduced costs by 30%", you may use "30%" but NOT "nearly a third" or "~30%".
+3. **When no numbers are provided**, use qualitative/conceptual phrasing: "significant", "rapid", "leading" — never invent quantitative claims.
+4. **data_points arrays** must contain ONLY information explicitly present in the user's input. Empty array `[]` is better than fabricated data.
+5. **Do NOT add subheadline to the strategy JSON** — subheadlines are generated at visual generation time, not during strategy.
+
+## Model Configuration Note
+
+This strategy prompt should be called with temperature=0.7 for creative but controlled output. Lower temperatures produce repetitive frameworks; higher temperatures lose coherence.
 
 Think like a Fortune 500 strategy consultant meets UI architect. Stay faithful to the user's data. Every slide must earn its place in the narrative.

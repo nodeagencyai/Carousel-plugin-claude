@@ -1,0 +1,312 @@
+#!/usr/bin/env node
+
+/**
+ * post-process.mjs — Transform raw Gemini SVG output into polished, branded SVG.
+ *
+ * Usage:
+ *   node scripts/post-process.mjs \
+ *     --input raw-slide.svg \
+ *     --output slide-1.svg \
+ *     --brand brand-profile.json \
+ *     --slide-number 1 \
+ *     --total-slides 5
+ *
+ * Outputs JSON to stdout: { success: true, output: "...", slideNumber: N }
+ * On error: { success: false, error: "..." }
+ *
+ * No external dependencies — uses only Node.js builtins (fs, path).
+ */
+
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
+import { dirname, resolve } from 'path';
+
+// ---------------------------------------------------------------------------
+// Arg parsing
+// ---------------------------------------------------------------------------
+
+const args = process.argv.slice(2);
+
+function getArg(name) {
+  const flag = `--${name}`;
+  const idx = args.indexOf(flag);
+  return idx >= 0 && idx + 1 < args.length ? args[idx + 1] : null;
+}
+
+const inputPath = getArg('input');
+const outputPath = getArg('output');
+const brandPath = getArg('brand');
+const slideNumber = parseInt(getArg('slide-number') || '1', 10);
+const totalSlides = parseInt(getArg('total-slides') || '5', 10);
+
+// ---------------------------------------------------------------------------
+// Validation
+// ---------------------------------------------------------------------------
+
+function fail(message) {
+  console.log(JSON.stringify({ success: false, error: message }));
+  process.exit(1);
+}
+
+if (!inputPath) fail('Missing required argument: --input');
+if (!outputPath) fail('Missing required argument: --output');
+if (!brandPath) fail('Missing required argument: --brand');
+
+if (!existsSync(inputPath)) fail(`Input file not found: ${inputPath}`);
+if (!existsSync(brandPath)) fail(`Brand profile not found: ${brandPath}`);
+
+// ---------------------------------------------------------------------------
+// Read inputs
+// ---------------------------------------------------------------------------
+
+let rawSvg;
+try {
+  rawSvg = readFileSync(resolve(inputPath), 'utf-8');
+} catch (err) {
+  fail(`Failed to read input SVG: ${err.message}`);
+}
+
+let brand;
+try {
+  brand = JSON.parse(readFileSync(resolve(brandPath), 'utf-8'));
+} catch (err) {
+  fail(`Failed to read/parse brand profile: ${err.message}`);
+}
+
+// ---------------------------------------------------------------------------
+// Step 1 — Strip markdown code fences (Gemini sometimes wraps output)
+// ---------------------------------------------------------------------------
+
+let svg = rawSvg;
+svg = svg.replace(/^```(?:xml|svg)?\s*\n?/m, '').replace(/\n?```\s*$/m, '');
+
+// ---------------------------------------------------------------------------
+// Step 2 — Extract inner content from <svg> wrapper if Gemini included one
+// ---------------------------------------------------------------------------
+
+const svgContentMatch = svg.match(/<svg[^>]*>([\s\S]*)<\/svg>/i);
+const content = svgContentMatch ? svgContentMatch[1] : svg;
+
+// Remove defs/style that Gemini may have added (we supply our own)
+let cleanContent = content
+  .replace(/<defs>[\s\S]*?<\/defs>/gi, '')
+  .replace(/<style>[\s\S]*?<\/style>/gi, '');
+
+// ---------------------------------------------------------------------------
+// Step 3 — Remove black background rectangles
+// ---------------------------------------------------------------------------
+
+function removeBlackRects(svgStr) {
+  // Remove full-canvas dark/black rects that Gemini frequently adds.
+  // Since attribute order varies, we match all <rect> tags individually and
+  // test each for (a) black fill AND (b) large width+height.
+  const blackFillRe = /fill=["'](?:#0{3,6}|black|rgb\(0,\s*0,\s*0\))["']/i;
+  const widthRe = /width=["'](\d+(?:\.\d+)?)["']/i;
+  const heightRe = /height=["'](\d+(?:\.\d+)?)["']/i;
+
+  svgStr = svgStr.replace(/<rect[^>]*\/?\s*>/gi, (tag) => {
+    const hasBlackFill = blackFillRe.test(tag);
+    const wMatch = tag.match(widthRe);
+    const hMatch = tag.match(heightRe);
+    if (
+      hasBlackFill &&
+      wMatch && parseFloat(wMatch[1]) >= 1000 &&
+      hMatch && parseFloat(hMatch[1]) >= 1000
+    ) {
+      return ''; // Strip it
+    }
+    return tag;
+  });
+  return svgStr;
+}
+
+cleanContent = removeBlackRects(cleanContent);
+
+// ---------------------------------------------------------------------------
+// Step 4 — Fix safe-zone violations
+// ---------------------------------------------------------------------------
+
+function fixSafeZone(svgStr, brandProfile) {
+  const headerHeight = brandProfile.visual?.canvas?.headerHeight || 280;
+  const footerStart = brandProfile.visual?.canvas?.footerStart || 1150;
+  const safeXMin = brandProfile.visual?.canvas?.safeXMin || 140;
+  const safeXMax = brandProfile.visual?.canvas?.safeXMax || 920;
+  const contentStart = headerHeight + 20;
+
+  // Fix y-coordinates on common SVG elements
+  svgStr = svgStr.replace(
+    /(<(?:text|rect|circle|ellipse|line|image|g)[^>]*\s)y=["'](-?\d+(?:\.\d+)?)["']/gi,
+    (match, prefix, y) => {
+      let yVal = parseFloat(y);
+      if (yVal < contentStart) yVal = contentStart;
+      if (yVal > footerStart) yVal = footerStart - 40;
+      return `${prefix}y="${yVal}"`;
+    }
+  );
+
+  // Fix x-coordinates
+  svgStr = svgStr.replace(
+    /(<(?:text|rect|circle|ellipse|line|image|g)[^>]*\s)x=["'](-?\d+(?:\.\d+)?)["']/gi,
+    (match, prefix, x) => {
+      let xVal = parseFloat(x);
+      if (xVal < safeXMin) xVal = safeXMin;
+      if (xVal > safeXMax) xVal = safeXMax;
+      return `${prefix}x="${xVal}"`;
+    }
+  );
+
+  return svgStr;
+}
+
+cleanContent = fixSafeZone(cleanContent, brand);
+
+// ---------------------------------------------------------------------------
+// Step 5 — Color mixing helper
+// ---------------------------------------------------------------------------
+
+function mixColors(hex1, hex2, ratio) {
+  // Normalise short hex (#abc → #aabbcc)
+  const expand = (h) => {
+    if (h.length === 4) {
+      return `#${h[1]}${h[1]}${h[2]}${h[2]}${h[3]}${h[3]}`;
+    }
+    return h;
+  };
+  const c1 = expand(hex1);
+  const c2 = expand(hex2);
+
+  const r1 = parseInt(c1.slice(1, 3), 16);
+  const g1 = parseInt(c1.slice(3, 5), 16);
+  const b1 = parseInt(c1.slice(5, 7), 16);
+  const r2 = parseInt(c2.slice(1, 3), 16);
+  const g2 = parseInt(c2.slice(3, 5), 16);
+  const b2 = parseInt(c2.slice(5, 7), 16);
+
+  const r = Math.round(r1 + (r2 - r1) * ratio);
+  const g = Math.round(g1 + (g2 - g1) * ratio);
+  const b = Math.round(b1 + (b2 - b1) * ratio);
+
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+// ---------------------------------------------------------------------------
+// Step 6 — Build the final branded SVG wrapper
+// ---------------------------------------------------------------------------
+
+function buildFinalSvg(innerContent, brandProfile, slideNum) {
+  const width = brandProfile.visual?.canvas?.width || 1080;
+  const height = brandProfile.visual?.canvas?.height || 1350;
+  const bgColor =
+    brandProfile.visual?.background?.color ||
+    brandProfile.visual?.colors?.primary ||
+    '#1a1a1a';
+  const fontPrimary = brandProfile.visual?.fonts?.primary || 'Inter';
+  const fontSecondary = brandProfile.visual?.fonts?.secondary || 'Inter';
+
+  // Gradient colours
+  const gradientFrom =
+    brandProfile.visual?.colors?.gradient?.from ||
+    brandProfile.visual?.colors?.accent ||
+    '#666666';
+  const gradientTo =
+    brandProfile.visual?.colors?.gradient?.to || '#FFFFFF';
+
+  // Multi-stop chrome gradient (the key to a premium look)
+  const gradientStops = brandProfile.visual?.colors?.gradient?.stops || [
+    { offset: '0%', color: gradientFrom },
+    { offset: '20%', color: mixColors(gradientFrom, gradientTo, 0.4) },
+    { offset: '40%', color: gradientTo },
+    { offset: '50%', color: gradientTo },
+    { offset: '60%', color: gradientTo },
+    { offset: '80%', color: mixColors(gradientFrom, gradientTo, 0.4) },
+    { offset: '100%', color: gradientFrom },
+  ];
+
+  const stopsXml = gradientStops
+    .map((s) => `      <stop offset="${s.offset}" stop-color="${s.color}"/>`)
+    .join('\n');
+
+  // --- Background -----------------------------------------------------------
+  let backgroundXml = `  <rect width="${width}" height="${height}" fill="${bgColor}"/>`;
+
+  const bgImage =
+    slideNum === 1
+      ? brandProfile.visual?.background?.heroImage
+      : brandProfile.visual?.background?.contentImage;
+
+  if (bgImage) {
+    try {
+      if (bgImage.endsWith('.svg')) {
+        // Inline SVG background
+        const bgSvgRaw = readFileSync(resolve(bgImage), 'utf-8');
+        const bgContent = bgSvgRaw
+          .replace(/<\?xml[^?]*\?>/, '')
+          .replace(/<svg[^>]*>/, '')
+          .replace(/<\/svg>/, '');
+        backgroundXml = [
+          `  <g id="background">`,
+          `    <rect width="${width}" height="${height}" fill="${bgColor}"/>`,
+          `    ${bgContent}`,
+          `  </g>`,
+        ].join('\n');
+      } else {
+        // Raster image — embed as base64
+        const imgBuffer = readFileSync(resolve(bgImage));
+        const base64 = imgBuffer.toString('base64');
+        const ext = bgImage.split('.').pop().toLowerCase();
+        const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
+        backgroundXml = `  <image href="data:${mime};base64,${base64}" width="${width}" height="${height}"/>`;
+      }
+    } catch {
+      // Fall back to solid colour — already set above
+    }
+  }
+
+  // --- Assemble -------------------------------------------------------------
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  <defs>
+    <style>
+      text {
+        font-family: '${fontPrimary}', '${fontSecondary}', -apple-system, BlinkMacSystemFont, sans-serif;
+        letter-spacing: -0.02em;
+      }
+    </style>
+    <linearGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+${stopsXml}
+    </linearGradient>
+    <linearGradient id="nodeSilver" x1="0%" y1="0%" x2="100%" y2="0%">
+${stopsXml}
+    </linearGradient>
+  </defs>
+
+${backgroundXml}
+
+  <g id="content">
+${innerContent}
+  </g>
+</svg>`;
+}
+
+// ---------------------------------------------------------------------------
+// Main
+// ---------------------------------------------------------------------------
+
+const finalSvg = buildFinalSvg(cleanContent, brand, slideNumber);
+
+// Ensure output directory exists
+mkdirSync(dirname(resolve(outputPath)), { recursive: true });
+
+try {
+  writeFileSync(resolve(outputPath), finalSvg);
+} catch (err) {
+  fail(`Failed to write output: ${err.message}`);
+}
+
+console.log(
+  JSON.stringify({
+    success: true,
+    output: resolve(outputPath),
+    slideNumber,
+    totalSlides,
+  })
+);

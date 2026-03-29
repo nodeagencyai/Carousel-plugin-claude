@@ -2,13 +2,15 @@
 
 This file contains the spatial rules and layout instructions for each carousel visual framework. These are injected into the visual generation prompt as `{{FRAMEWORK_INSTRUCTIONS}}` based on the strategy's chosen framework for each slide.
 
-All frameworks operate within the safe zone defined by:
-- **Top boundary**: y={{CONTENT_START}} (first content element)
-- **Bottom boundary**: y={{FOOTER_START}} (nothing below this)
-- **Left boundary**: x={{SAFE_X_MIN}}
-- **Right boundary**: x={{SAFE_X_MAX}}
-- **Canvas center X**: midpoint of {{SAFE_X_MIN}} and {{SAFE_X_MAX}}
-- **Canvas center Y**: midpoint of {{CONTENT_START}} and {{FOOTER_START}}
+All frameworks operate within the safe zone:
+- **Top boundary**: y=300 (first content element)
+- **Bottom boundary**: y=1100 (nothing below this)
+- **Left boundary**: x=140
+- **Right boundary**: x=920
+- **Canvas center X**: x=530
+- **Canvas center Y**: y=700
+
+These are defaults. If the brand profile specifies different values, Claude will substitute them before calling you.
 
 ---
 
@@ -20,22 +22,30 @@ All frameworks operate within the safe zone defined by:
 
 ### Spatial Rules
 ```
-Headline:       y = canvas_center_y (vertically centered in safe zone)
+Headline:       y=420-500 (large, bold, centered)
                 font-size: 84-96px ({{FONT_PRIMARY}})
-                text-anchor: middle, x = canvas_center_x
+                text-anchor: middle, x=530
+                letter-spacing: -0.02em
 
 Gradient word:  MANDATORY - one keyword MUST use brand gradient
                 <tspan fill="url(#brandGradient)">keyword</tspan>
                 Choose the most impactful word (key concept or action word)
                 DO NOT make entire headline gradient - ONLY one word
 
-Subtitle:       y = headline_y + 80px
+Key metric:     y=550-650 (center focus, optional)
+                font-size: 40-48px
+                Only if a single standout number is provided
+
+Supporting text: y=750-850
                 font-size: 32-36px ({{FONT_SECONDARY}})
                 fill: {{COLOR_CAPTION}}
+                letter-spacing: 0em
                 Optional - only if subheadline is provided
 
 Accent line:    Optional subtle decorative line below headline
-                width: 150-200px, centered, stroke: url(#brandGradient), 2-3px
+                width: 150-200px, centered at x=530, stroke: url(#brandGradient), 2-3px
+
+All text x >= 140
 ```
 
 ### Rules
@@ -48,12 +58,14 @@ Accent line:    Optional subtle decorative line below headline
 
 ### Example Structure
 ```xml
-<text x="{{center_x}}" y="{{center_y}}" text-anchor="middle"
-      font-family="{{FONT_PRIMARY}}" font-size="84" fill="{{COLOR_TEXT}}">
+<text x="530" y="460" text-anchor="middle"
+      font-family="{{FONT_PRIMARY}}" font-size="84" fill="{{COLOR_TEXT}}"
+      letter-spacing="-0.02em">
   The Future is <tspan fill="url(#brandGradient)">Autonomous</tspan>
 </text>
-<text x="{{center_x}}" y="{{center_y + 80}}" text-anchor="middle"
-      font-family="{{FONT_SECONDARY}}" font-size="32" fill="{{COLOR_CAPTION}}">
+<text x="530" y="540" text-anchor="middle"
+      font-family="{{FONT_SECONDARY}}" font-size="32" fill="{{COLOR_CAPTION}}"
+      letter-spacing="0em">
   Why the next decade belongs to AI-native companies
 </text>
 ```
@@ -68,28 +80,29 @@ Accent line:    Optional subtle decorative line below headline
 
 ### Spatial Rules
 ```
-Headline:       y = {{CONTENT_START}}
+Headline:       y=320
                 font-size: 56-64px ({{FONT_PRIMARY}})
-                text-anchor: middle, x = canvas_center_x
+                text-anchor: middle, x=530
 
-Subtitle:       y = headline_y + 60px
-                font-size: 28px ({{FONT_SECONDARY}})
+Column headers: y=420
+                font-family: {{FONT_PRIMARY}} (Satoshi-Bold)
+                font-size: 22-24px
                 fill: {{COLOR_CAPTION}}
 
-Table start:    y = subtitle_y + 80px (or headline_y + 100px if no subtitle)
+First data row: y=500
+Row spacing:    80px
+Last row:       MUST be above y=1050
 
-Column headers: font-family: {{FONT_PRIMARY}}, font-size: 22-24px
-                fill: {{COLOR_CAPTION}}
+Content:        between x=180 and x=900
 
-Data rows:      font-family: {{FONT_SECONDARY}}, font-size: 26-28px
+Table width:    Max 720px, centered horizontally
+                Left edge: x=180
+                Right edge: x=900
+
+Data values:    font-family: {{FONT_SECONDARY}}, font-size: 26-28px
                 fill: {{COLOR_TEXT}}
-                Row height: 70-80px
 
 Row separators: Horizontal lines, stroke: {{COLOR_TEXT}}, stroke-opacity: 0.08, 0.5px
-
-Table width:    Max 700px, centered horizontally
-                Left edge: canvas_center_x - 350
-                Right edge: canvas_center_x + 350
 
 Row backgrounds: Alternating fill-opacity (0.02 and 0.04) for subtle striping
 ```
@@ -100,7 +113,7 @@ Row backgrounds: Alternating fill-opacity (0.02 and 0.04) for subtle striping
 - One key value per row may use brandGradient fill
 - Cell padding: 30px horizontal, centered vertically in row
 - Header row gets a slightly stronger background (fill-opacity: 0.06)
-- Last row must end before {{FOOTER_START}} - calculate total height before rendering
+- Last row must end before y=1050 - calculate total height before rendering
 
 ---
 
@@ -112,50 +125,48 @@ Row backgrounds: Alternating fill-opacity (0.02 and 0.04) for subtle striping
 
 ### Spatial Rules
 ```
-Headline:       y = {{CONTENT_START}}
+Headline:       y=320
                 font-size: 56-64px ({{FONT_PRIMARY}})
 
-Subtitle:       y = headline_y + 60px (optional)
+MAXIMUM 3 BARS (NOT 4):
 
-EXACT POSITIONING FORMULA (max 4 bars):
-Bar spacing:    180-200px between each bar group
+Bar 1:          Label y=480
+                Bar y=510 to y=540 (height 30px)
+                Value at y=525
 
-Bar 1:          Label y = headline_y + 160px
-                Bar y = label_y + 30px
+Bar 2:          Label y=680
+                Bar y=710 to y=740 (height 30px)
+                Value at y=725
 
-Bar 2:          Label y = bar_1_y + 180px
-                Bar y = label_y + 30px
-
-Bar 3:          Label y = bar_2_y + 180px
-                Bar y = label_y + 30px
-
-Bar 4:          Label y = bar_3_y + 180px (only if fits before {{FOOTER_START}})
-                Bar y = label_y + 30px
+Bar 3:          Label y=880
+                Bar y=910 to y=940 (height 30px)
+                Value at y=925
 
 BAR SPECIFICATIONS:
+- Bars from x=200 to variable width, max x=880
 - Bar height: 30px (thin and elegant)
-- Bar max width: 400px (scaled proportionally to values)
-- Background track: same position, width: 500px, fill: {{COLOR_TEXT}}, fill-opacity: 0.06, rx: 4
+- Background track: same y position, width from x=200 to x=880, fill: {{COLOR_TEXT}}, fill-opacity: 0.06, rx: 4
 - Actual bar: fill: {{COLOR_TEXT}}, fill-opacity: 0.9, rx: 4
-- All bars start at x = {{SAFE_X_MIN}}
 
-Labels:         x = {{SAFE_X_MIN}}, y = bar_y - 20px
+Labels:         ABOVE bars (y = bar_y - 30px)
+                x=200
                 font-family: {{FONT_SECONDARY}}, font-size: 24px
                 fill: {{COLOR_CAPTION}}
 
-Values:         x = {{SAFE_X_MIN}} + 520px, y = bar_y + 15px
-                font-family: {{FONT_PRIMARY}}, font-size: 36-40px
+Values:         To the RIGHT of bars — NO OVERLAPPING TEXT
+                x = bar_end + 20px (or x=900 if bar is wide)
+                font-family: {{FONT_PRIMARY}}, font-size: 40-48px
                 fill: url(#brandGradient) for the highest value, {{COLOR_TEXT}} for others
 ```
 
 ### Rules
-- Maximum 4 bars to maintain spacing
-- Labels ALWAYS above bars, values ALWAYS to the right - NO overlap
+- **Maximum 3 bars** to maintain generous spacing
+- Labels ALWAYS above bars, values ALWAYS to the right — NO overlap
 - DO NOT place values inside bars
-- DO NOT use computed y-offset calculations - use EXACT y coordinates
+- DO NOT use computed y-offset calculations — use the EXACT y coordinates above
 - DO NOT make bars taller than 30px
 - The largest value gets brandGradient treatment
-- Verify: last bar_y + 30px < {{FOOTER_START}}
+- All data values: consistent 40-48px size
 
 ---
 
@@ -167,31 +178,29 @@ Values:         x = {{SAFE_X_MIN}} + 520px, y = bar_y + 15px
 
 ### Spatial Rules
 ```
-Headline:       y = {{CONTENT_START}}
+Headline:       y=320
                 font-size: 56-64px ({{FONT_PRIMARY}})
 
-Intersection:   x = canvas_center_x, y = midpoint of (headline_y + 100) and ({{FOOTER_START}} - 60)
+Intersection:   x=530, y=700
 
-Hairlines:      Horizontal: x={{SAFE_X_MIN}} to x={{SAFE_X_MAX}}, y=intersection_y
-                Vertical: x=intersection_x, y=headline_y+80 to y={{FOOTER_START}}-60
+Hairlines:      Horizontal: from x=140 to x=920, y=700
+                Vertical: x=530, from y=400 to y=1050
                 stroke: {{COLOR_TEXT}}, stroke-opacity: 0.15, stroke-width: 1px
 
 Axis labels:    font-family: {{FONT_SECONDARY}}, font-size: 18-20px
                 fill: {{COLOR_CAPTION}}, positioned at line endpoints
 
-Quadrant labels: Centered within each quadrant
-                 font-family: {{FONT_PRIMARY}}, font-size: 28-32px
-                 fill: {{COLOR_TEXT}}
+Quadrant labels:
+  Top-left:     x=200, y=500
+  Top-right:    x=700, y=500
+  Bottom-left:  x=200, y=850
+  Bottom-right: x=700, y=850
+                font-family: {{FONT_PRIMARY}}, font-size: 28-32px
+                fill: {{COLOR_TEXT}}
 
-Quadrant data:   font-family: {{FONT_SECONDARY}}, font-size: 22-24px
-                 fill: {{COLOR_CAPTION}}
-                 Positioned below quadrant label with 30px gap
-
-Quadrant zones:
-  Top-left:     x={{SAFE_X_MIN}}+20 to intersection_x-20, y=headline_y+80 to intersection_y-20
-  Top-right:    intersection_x+20 to {{SAFE_X_MAX}}-20, y=headline_y+80 to intersection_y-20
-  Bottom-left:  x={{SAFE_X_MIN}}+20 to intersection_x-20, y=intersection_y+20 to {{FOOTER_START}}-60
-  Bottom-right: intersection_x+20 to {{SAFE_X_MAX}}-20, y=intersection_y+20 to {{FOOTER_START}}-60
+Quadrant data:  font-family: {{FONT_SECONDARY}}, font-size: 22-24px
+                fill: {{COLOR_CAPTION}}
+                Positioned below quadrant label with 30px gap
 ```
 
 ### Rules
@@ -211,34 +220,32 @@ Quadrant zones:
 
 ### Spatial Rules
 ```
-Headline:       y = {{CONTENT_START}}
+Headline:       y=320
                 font-size: 56-64px ({{FONT_PRIMARY}})
 
-Subtitle:       y = headline_y + 60px (optional)
+3 LAYERS MAX (not 4):
 
-Stack start:    y = headline_y + 140px (or + 100px if no subtitle)
+Layer 1:        y=400 to y=580 (height 180px)
+Layer 2:        y=620 to y=800 (height 180px)
+Layer 3:        y=840 to y=1020 (height 180px)
 
-LAYER SPECIFICATIONS:
-- Maximum 4 layers (3 is optimal)
-- Layer height: 140-180px
-- Gap between layers: 30-40px
-- Layer width: 80% of safe zone width
-- Layers centered horizontally
+Gap:            40px between layers
+MUST fit:       within y=400 to y=1050
 
-Layer 1:        y = stack_start
-Layer 2:        y = layer_1_y + layer_height + gap
-Layer 3:        y = layer_2_y + layer_height + gap
-Layer 4:        y = layer_3_y + layer_height + gap (only if fits)
+Layer container: <rect x="..." y="..." width="..." height="180"
+                  fill="white" fill-opacity="0.04"
+                  stroke="{{COLOR_TEXT}}" stroke-opacity="0.1"
+                  rx="12"/>
+                Optional subtle drop shadow via filter
 
-Layer container: <rect x="..." y="..." width="..." height="..."
-                  fill="{{COLOR_TEXT}}" fill-opacity="0.04" rx="12"
-                  stroke="{{COLOR_TEXT}}" stroke-opacity="0.08" stroke-width="1"/>
+Top layer:      fill-opacity="0.06" (descending: 0.05, 0.04)
+Layer width:    80% of safe zone width, centered horizontally
 
-Layer number:   x = layer_left + 40px, y = layer_y + (height/2) + 8px
+Layer number:   x = layer_left + 40px, y = layer_y + 98px
                 font-family: {{FONT_PRIMARY}}, font-size: 40px
                 fill: url(#brandGradient) (for top layer only, {{COLOR_CAPTION}} for others)
 
-Layer title:    x = layer_left + 100px, y = layer_y + (height/2) - 8px
+Layer title:    x = layer_left + 100px, y = layer_y + 82px
                 font-family: {{FONT_PRIMARY}}, font-size: 28-32px
                 fill: {{COLOR_TEXT}}
 
@@ -248,10 +255,12 @@ Layer desc:     x = layer_left + 100px, y = title_y + 32px
 ```
 
 ### Rules
-- Verify: last layer_y + layer_height < {{FOOTER_START}}
-- Top layer can have slightly higher fill-opacity (0.06) to indicate priority
+- **Maximum 3 layers** to maintain spacing and readability
+- Verify: last layer bottom (y=1020) stays below y=1050
+- Top layer has slightly higher fill-opacity (0.06) to indicate priority
 - Each layer must have both a title and description
 - Text inside layers with 40px horizontal padding
+- Glass containers: `fill="white" fill-opacity="0.04" stroke-opacity="0.1" rx="12"`
 - Optional: subtle drop shadow on layers via `<filter>` for depth
 
 ---
@@ -260,55 +269,43 @@ Layer desc:     x = layer_left + 100px, y = title_y + 32px
 
 **Use for**: Processes, timelines, sequential steps, cause-and-effect chains, pipelines.
 
-**Philosophy**: Directional energy moving left to right (or top to bottom for vertical flows). Clean nodes connected by lines or arrows. The eye should naturally follow the flow.
+**Philosophy**: Directional energy moving top to bottom. Clean nodes connected by lines or arrows. The eye should naturally follow the flow.
 
 ### Spatial Rules
 ```
-Headline:       y = {{CONTENT_START}}
+Headline:       y=320
                 font-size: 56-64px ({{FONT_PRIMARY}})
 
-HORIZONTAL FLOW (default for 3-5 nodes):
-Flow line:      y = vertical center of safe zone
-                x = {{SAFE_X_MIN}} + 40 to {{SAFE_X_MAX}} - 40
-                stroke: url(#brandGradient), stroke-width: 2px
+Flow steps:     from y=420 to y=1000
+                3-5 steps connected with arrows/lines
 
-Nodes:          Evenly spaced along flow line
-                Circle diameter: 40-50px
-                fill: {{COLOR_TEXT}}, fill-opacity: 0.08
-                stroke: url(#brandGradient), stroke-width: 1.5px
+Step boxes:     height: 80px
+                width: 300-500px
+                centered at x=530
+                fill: white, fill-opacity: 0.04, rx: 12
 
-Node labels:    Above nodes, y = flow_y - 60px
+Step 1:         y=420 to y=500
+Step 2:         y=560 to y=640
+Step 3:         y=700 to y=780
+Step 4:         y=840 to y=920 (optional)
+Step 5:         y=940 to y=1000 (only if 5 steps, reduce heights)
+
+Labels:         Inside boxes, centered
                 font-family: {{FONT_PRIMARY}}, font-size: 24-28px
                 fill: {{COLOR_TEXT}}, text-anchor: middle
 
-Node details:   Below nodes, y = flow_y + 60px
-                font-family: {{FONT_SECONDARY}}, font-size: 20-22px
-                fill: {{COLOR_CAPTION}}, text-anchor: middle
-                Max width: node_spacing - 40px (use word wrap)
-
-Arrows:         Small chevrons (>) between nodes
-                fill: url(#brandGradient), font-size: 24px
-
-VERTICAL FLOW (for 4+ detailed steps):
-Flow line:      x = {{SAFE_X_MIN}} + 60
-                y = headline_y + 100 to {{FOOTER_START}} - 40
-
-Nodes:          Evenly spaced vertically along line
-
-Step labels:    x = flow_x + 50, y = node_y
-                font-family: {{FONT_PRIMARY}}, font-size: 26-28px
-
-Step details:   x = flow_x + 50, y = node_y + 30px
-                font-family: {{FONT_SECONDARY}}, font-size: 22px
+Arrows:         Simple lines with small arrowheads between boxes
+                stroke: url(#brandGradient), stroke-width: 2px
+                Arrow from bottom of box N to top of box N+1
 ```
 
 ### Rules
-- Maximum 5 nodes for horizontal, 6 for vertical
-- Ensure equal spacing between all nodes
-- Arrows/connectors must clearly indicate direction
-- One node may be "active" (highlighted with brandGradient fill, slightly larger)
+- Maximum 5 steps
+- Ensure equal spacing between all steps
+- Arrows/connectors must clearly indicate direction (top to bottom)
+- One step may be "active" (highlighted with brandGradient stroke, slightly larger)
 - Labels must not overlap - reduce font size if needed to maintain spacing
-- Verify all node labels fit within {{SAFE_X_MIN}} to {{SAFE_X_MAX}}
+- Verify all step boxes fit within x=140 to x=920 and y=420 to y=1000
 
 ---
 
@@ -320,34 +317,27 @@ Step details:   x = flow_x + 50, y = node_y + 30px
 
 ### Spatial Rules
 ```
-Headline:       y = {{CONTENT_START}}
+Headline:       y=320
                 font-size: 56-64px ({{FONT_PRIMARY}})
 
-Center point:   x = canvas_center_x
-                y = midpoint of (headline_y + 100) and ({{FOOTER_START}} - 60)
+Center point:   x=530, y=700
 
-Central element: Circle or rounded rect at center
-                 radius: 60-80px
-                 fill: {{COLOR_TEXT}}, fill-opacity: 0.06
-                 stroke: url(#brandGradient), stroke-width: 2px
+Central element: Circle at center
+                 r=60
+                 fill: url(#brandGradient)
 
 Central label:  Inside central element
                 font-family: {{FONT_PRIMARY}}, font-size: 28-32px
                 fill: {{COLOR_TEXT}}, text-anchor: middle
 
-Radiating lines: From center outward to spoke positions
+Maximum radius: 280px (to stay within safe zone)
+
+Radiating items: 4-6 items at equal angles around center
+                 Distance from center: 200-280px
+
+Connecting lines: From center outward to spoke positions
                  stroke: {{COLOR_TEXT}}, stroke-opacity: 0.12
                  stroke-width: 1px
-                 Maximum radius: calculated to stay within safe zone bounds
-
-Spoke positions: Evenly distributed around center at 360/N degree intervals
-                 Distance from center: 200-280px (must stay in safe zone)
-
-                 Calculate max radius per spoke:
-                 - Horizontal clearance: min(center_x - {{SAFE_X_MIN}}, {{SAFE_X_MAX}} - center_x) - 80px
-                 - Vertical clearance up: center_y - (headline_y + 80) - 40px
-                 - Vertical clearance down: {{FOOTER_START}} - center_y - 40px
-                 - Use the minimum of all clearances as max radius
 
 Spoke labels:   Positioned at spoke endpoints
                 font-family: {{FONT_SECONDARY}}, font-size: 22-26px
@@ -361,12 +351,62 @@ Spoke details:  Below spoke labels
 
 ### Rules
 - Maximum 6 spokes (4-5 is optimal for readability)
-- Each spoke must stay entirely within the safe zone - calculate positions before rendering
+- Each spoke must stay entirely within the safe zone (x=140-920, y=300-1100)
 - The central element should contain the core concept (1-3 words max)
+- Center circle: r=60, fill with brandGradient
 - Spokes at top/bottom should have labels to the side to avoid overlap with headline/footer
 - One spoke may be visually emphasized (brandGradient stroke on its line, bolder label)
 - Avoid placing spokes at exact top (12 o'clock) position to prevent headline collision
 - Start spoke placement at roughly 2 o'clock and distribute clockwise
+
+---
+
+## THE_SHIFT
+
+**Use for**: Before/after comparisons, transformations, paradigm shifts, old vs. new contrasts.
+
+**Philosophy**: A clear visual divide between two states. The left side represents the old/before, the right side the new/after. The divider creates tension and the eye moves naturally from left to right.
+
+### Spatial Rules
+```
+Headline:       y=320
+                font-size: 56-64px ({{FONT_PRIMARY}})
+
+Vertical divider: x=530, from y=400 to y=1050
+                  stroke: {{COLOR_TEXT}}, stroke-opacity: 0.15, stroke-width: 1px
+
+"Before" label: x=250, y=400
+                font-family: {{FONT_PRIMARY}}, font-size: 28-32px
+                fill: {{COLOR_CAPTION}}
+
+"After" label:  x=740, y=400
+                font-family: {{FONT_PRIMARY}}, font-size: 28-32px
+                fill: url(#brandGradient)
+
+Left side items: x=140 to x=500
+                 Starting y=480, spacing 120px between items
+                 font-family: {{FONT_SECONDARY}}, font-size: 24-28px
+                 fill: {{COLOR_TEXT}}
+
+Right side items: x=560 to x=920
+                  Starting y=480, spacing 120px between items
+                  font-family: {{FONT_SECONDARY}}, font-size: 24-28px
+                  fill: {{COLOR_TEXT}}
+
+Maximum:        4 comparison pairs
+
+Arrow/transition: At divider midpoint (x=530, y=725)
+                  Small arrow or indicator pointing right
+                  fill: url(#brandGradient)
+```
+
+### Rules
+- Maximum 4 comparison pairs to maintain readability
+- Left side items aligned left (text-anchor: start), right side items aligned left (text-anchor: start)
+- "Before" label uses caption color (subdued), "After" label uses brandGradient (emphasis)
+- Arrow or transition indicator at the vertical midpoint of the divider
+- Keep consistent vertical alignment between left and right items (same y-coordinates)
+- All content must stay within y=400 to y=1050
 
 ---
 
@@ -381,3 +421,4 @@ Spoke details:  Below spoke labels
 | Hierarchy/priorities | STACK | Layered depth implies importance order |
 | Process/timeline | FLOW | Directional movement guides understanding |
 | Ecosystem/features | RADIANCE | Central concept with context radiating out |
+| Before/after contrast | THE_SHIFT | Clear visual divide between two states |
