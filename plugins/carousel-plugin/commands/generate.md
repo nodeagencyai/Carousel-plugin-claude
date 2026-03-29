@@ -97,37 +97,29 @@ The post-processing script handles:
 
 **If post-process.mjs fails**: Show the error to the user and fall back to the raw SVG file (copy `.raw-slide-{N}.svg` to `slide-{N}.svg` as-is). Warn that the slide may need manual cleanup.
 
-## Step 4: Opus Validation Pass (Optional)
+## Step 4: Validation Pass
 
 Skip this step if the user passed `--skip-validation` or explicitly asked for faster generation.
 
-After ALL slides are generated and post-processed, do one final quality check. For each `slide-{N}.svg`:
+After ALL slides are generated and post-processed, YOU (Claude — the one running in Claude Code) review each slide directly. This costs the user nothing extra — no additional API calls.
 
-1. Read the post-processed SVG file content
-2. Send to Opus via OpenRouter:
+For each `slide-{N}.svg`:
 
-```json
-{
-  "model": "anthropic/claude-opus-4",
-  "messages": [
-    {
-      "role": "user",
-      "content": "Review this SVG for quality issues. Check: 1) No elements outside safe zone (y:300-1100, x:140-920), 2) No ALL CAPS text, 3) No overlapping elements, 4) Gradient used on max 1-2 elements. If issues found, output the corrected SVG. If no issues, output the SVG unchanged.\n\n{svg_content}"
-    }
-  ],
-  "temperature": 0.1,
-  "max_tokens": 16000
-}
-```
-
-Headers: same as Step 1.
-
-3. If Opus returned a modified SVG (different from the input):
-   - Save Opus's output to `.raw-slide-{N}.svg` (overwrite)
-   - Re-run the post-process script to ensure the wrapper and brand assets are intact
-   - Report: "Slide {N} — quality issues fixed"
-4. If Opus returned the SVG unchanged:
+1. Read the post-processed SVG file content using the Read tool
+2. Review it yourself for these quality issues:
+   - Elements outside safe zone (y < 300 or y > 1100, x < 140 or x > 920)
+   - ALL CAPS text (any text content that is fully uppercase)
+   - Gradient (`url(#brandGradient)`) used on more than 2 elements
+   - Overlapping text elements (multiple text elements with similar y-coordinates and overlapping x-ranges)
+   - Missing or malformed SVG elements
+3. If issues found:
+   - Fix the SVG content directly using the Edit tool
+   - Re-run the post-process script to ensure the wrapper is intact
+   - Report: "Slide {N} — fixed: {brief description of fixes}"
+4. If no issues:
    - Report: "Slide {N} — passed validation"
+
+This validation uses YOUR capabilities as Claude — no external API calls needed.
 
 ## Step 5: Save Strategy & Summary
 
