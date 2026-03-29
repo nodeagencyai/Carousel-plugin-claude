@@ -29,7 +29,7 @@ If your output isn't valid JSON on first attempt, correct it before proceeding.
 
 ## Phase 2: Visual Generation (Gemini via OpenRouter)
 
-For each slide, call OpenRouter with model `google/gemini-2.5-pro` for SVG generation.
+For each slide, call OpenRouter with model `google/gemini-3.1-pro-preview` for SVG generation.
 
 Key rules:
 - Fill all template placeholders in the visual prompt with actual brand values (see the Template Variable Filling table in `commands/generate.md`)

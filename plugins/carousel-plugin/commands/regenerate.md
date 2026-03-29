@@ -34,7 +34,7 @@ Fill all placeholders before calling Gemini. See the full template variable refe
 WebFetch POST to `https://openrouter.ai/api/v1/chat/completions`:
 ```json
 {
-  "model": "google/gemini-2.5-pro",
+  "model": "google/gemini-3.1-pro-preview",
   "messages": [
     {
       "role": "system",

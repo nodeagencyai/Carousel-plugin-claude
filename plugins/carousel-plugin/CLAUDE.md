@@ -42,7 +42,7 @@ You produce a `strategy.json` with slide briefs: headlines, frameworks, data poi
 
 ### Step 2: SVG Visual Generation (Gemini via OpenRouter — the ONLY paid call)
 
-For each slide, call OpenRouter with model `google/gemini-2.5-pro` (configurable) to generate SVG content elements.
+For each slide, call OpenRouter with model `google/gemini-3.1-pro-preview` (configurable) to generate SVG content elements.
 
 **Building the Gemini prompt — you MUST do all of these:**
 
@@ -160,7 +160,7 @@ Brand identity is loaded from `brand-profile.json` in the user's project root. K
 - All API calls go to: `https://openrouter.ai/api/v1/chat/completions`
 - API key: check `OPENROUTER_API_KEY` env var first, then fall back to plugin settings
 - Strategy: YOU (Claude) — no API call needed
-- SVG generation model: `google/gemini-2.5-pro` (configurable)
+- SVG generation model: `google/gemini-3.1-pro-preview` (configurable)
 
 ---
 

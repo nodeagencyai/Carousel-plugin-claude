@@ -82,7 +82,7 @@ For EACH slide in the strategy, make a WebFetch POST to `https://openrouter.ai/a
 
 ```json
 {
-  "model": "google/gemini-2.5-pro",
+  "model": "google/gemini-3.1-pro-preview",
   "messages": [
     {
       "role": "system",
