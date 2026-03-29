@@ -15,7 +15,7 @@
         "name": "NODE Agency",
         "email": "hello@nodeagency.ai"
       },
-      "source": ".",
+      "source": "./plugins/carousel-plugin",
       "category": "content"
     }
   ]

@@ -1,0 +1,12 @@
+{
+  "name": "carousel-plugin",
+  "version": "1.0.0",
+  "description": "Generate high-quality carousel graphics from any topic. Configure your brand identity once, then create professional SVG carousels with AI. Built by NODE.",
+  "author": {
+    "name": "NODE Agency",
+    "url": "https://nodeagency.ai"
+  },
+  "repository": "https://github.com/nodeagencyai/Carousel-plugin-claude",
+  "license": "MIT",
+  "keywords": ["carousel", "design", "svg", "social-media", "content", "branding"]
+}
