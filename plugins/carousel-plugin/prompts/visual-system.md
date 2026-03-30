@@ -81,6 +81,18 @@ LIGHT MODE CONTRAST (when designMode is 'light'):
 - The background is ALREADY PROVIDED as a separate layer
 - You create ONLY foreground content elements
 
+CAROUSEL ANTI-PATTERNS — NEVER DO THESE:
+1. Identical containers on every slide (vary the treatment)
+2. All text the same size (make headlines COMMAND attention)
+3. Centered everything (use left-align, asymmetry, offset)
+4. Faint elements at 0.03-0.04 opacity (commit to visible or remove)
+5. Generic progress bars for every data point (vary visualizations)
+6. Same layout repeated across slides (each slide should surprise)
+7. Decorative elements unrelated to content (every shape must mean something)
+8. Gradient on every headline keyword (use it once max, or not at all)
+9. Perfect symmetry on every slide (asymmetry creates energy)
+10. Mid-tone colors that don't commit (pick light or dark, not muddy middle)
+
 ⚠️ CRITICAL BOUNDARY ENFORCEMENT:
 - SAFE AREA: x:{{SAFE_X_MIN}}-{{SAFE_X_MAX}}, y:73-1252 (ABSOLUTE)
 - TOP BUFFER: y:73-280 is LOGO AREA — keep empty
@@ -144,6 +156,8 @@ When data is provided, VISUALIZE it. Don't just write numbers — show them:
 Simple SVG shapes communicate data faster than text. A 72px "88%" next to a filled bar is more impactful than "88% of companies report positive ROI" as plain text.
 
 {{FRAMEWORK_INSTRUCTIONS}}
+
+{{AESTHETIC_RULES}}
 
 COLOR MODE ({{COLOR_MODE}}):
 - white_dominant: All text {{COLOR_TEXT}}, gradient on max 1-2 accent elements only (or none)

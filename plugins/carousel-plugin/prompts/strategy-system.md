@@ -27,6 +27,7 @@ You must respond with a JSON object containing:
   "topic": "refined topic using user's language",
   "narrative_arc": "overall story structure",
   "target_outcome": "what the audience will gain",
+  "visual_signature": "description of the ONE visual motif that ties all slides together",
   "slides": [
     {
       "number": 1,
@@ -93,6 +94,10 @@ Content density should match {{DENSITY}}:
 - **minimal**: Big statements with few words. Maximum 3 data points per slide. 60%+ whitespace. Think Apple keynote
 - **balanced**: Mix of data and narrative. 4-5 data points per slide. 40-50% whitespace. Think McKinsey deck
 - **dense**: Data-heavy with lots of information. 6-8 data points per slide. 30-40% whitespace. Think financial report
+
+## Visual Signature
+
+Choose a visual_signature — ONE consistent visual motif that appears on every slide (e.g., accent bar on left of containers, numbered circles, diagonal stripe, small-caps pill badges). This makes the carousel feel like a cohesive SET.
 
 ## Requirements Checklist
 

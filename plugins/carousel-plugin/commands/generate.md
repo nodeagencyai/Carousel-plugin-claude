@@ -41,6 +41,21 @@ Then follow that prompt yourself to generate the content strategy JSON. You ARE 
 
 Output a JSON object with the strategy. Report to the user: "Strategy complete — generating {N} slides with frameworks: {list frameworks}"
 
+## Step 1b: Apply Design System
+
+Read the design system skill at `skills/design-system/SKILL.md` and apply it:
+
+1. **Aesthetic direction**: Based on the brand profile's style preset (check which preset was used, or infer from tone/density), select the matching aesthetic direction (Minimalist, Bold, Editorial, Corporate, or Neon/Tech). If no preset was used, infer from the brand profile's tone and design mode.
+
+2. **Visual signature**: Choose ONE visual motif that will repeat across all slides. Pick something that fits the aesthetic and content. Include it in the strategy output:
+   ```json
+   "visual_signature": "accent bar on the left side of every container"
+   ```
+
+3. **Build aesthetic rules**: Compile the aesthetic-specific rules + visual signature + anti-patterns into a single block. This becomes the `{{AESTHETIC_RULES}}` value when filling the Gemini prompt.
+
+Report: "Design system: {aesthetic} direction, signature: {visual_signature}"
+
 ## Template Variable Filling
 
 Before calling Gemini, fill ALL placeholders in the visual system prompt and framework instructions:
@@ -69,6 +84,8 @@ Before calling Gemini, fill ALL placeholders in the visual system prompt and fra
 | {{FRAMEWORK_INSTRUCTIONS}} | from frameworks.md | (per framework) |
 | {{PREFERRED_FRAMEWORKS}} | content.frameworks | auto |
 | {{EXCLUDED_FRAMEWORKS}} | content.excludedFrameworks | [] |
+| {{AESTHETIC_RULES}} | from design-system skill | (per carousel) |
+| {{VISUAL_SIGNATURE}} | chosen during Step 1b | (per carousel) |
 
 ### Derived values (compute from brand profile):
 - {{GLASS_FILL}}: If designMode="dark" → COLOR_TEXT. If "light" → BACKGROUND_COLOR
