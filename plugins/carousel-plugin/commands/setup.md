@@ -129,7 +129,24 @@ Ask these questions ONE AT A TIME:
    - If yes, note the file path
    - If no, skip — slides will use full header space
 
-7. **Design mode** — "Do you prefer dark or light slides?"
+### Branding Frame
+
+After collecting the logo, ask these additional branding questions:
+
+7. **Footer text** — "What URL or social handle should appear in the slide footer?"
+   - Examples: "anthropic.com", "@nodeagency", "yourcompany.io"
+   - This appears bottom-right on every slide
+   - If blank, no footer text
+
+8. **Hero CTA** — "What call-to-action text should appear on the first slide?"
+   - Default: "Swipe for more →"
+   - Or custom text
+   - Or none
+
+9. **Slide counter** — "Show slide numbers (1/5, 2/5) on each slide?"
+   - Yes (default) / No
+
+10. **Design mode** — "Do you prefer dark or light slides?"
    - **Dark mode** (default, recommended): Dark backgrounds with light text. Best for social media feeds.
      - Defaults: text=#FFFFFF, caption=#999999, primary=#1a1a1a
    - **Light mode**: Light backgrounds with dark text. Clean, minimal feel.
@@ -139,30 +156,30 @@ Ask these questions ONE AT A TIME:
 
 ## Stage 2: Content Style
 
-8. **Text density** — "How text-heavy should your carousels be?"
+11. **Text density** — "How text-heavy should your carousels be?"
    - Minimal: Big bold statements, few words, maximum visual impact
    - Balanced: Mix of data points and narrative text (recommended)
    - Dense: Data-heavy, lots of information, infographic style
 
-9. **Tone** — "What tone fits your brand?"
+12. **Tone** — "What tone fits your brand?"
    - Educational: Informative, teaching-focused
    - Professional: Corporate, polished
    - Casual: Friendly, conversational
    - Bold: Provocative, attention-grabbing
 
-10. **Visual frameworks** — "Any preferred visual styles for your slides?"
+13. **Visual frameworks** — "Any preferred visual styles for your slides?"
    - Show the options: data tables, bar charts, quadrant matrices, stacked layers, flow diagrams, or "auto" (let AI decide)
    - Default to "auto" if unsure
 
 ## Stage 3: Brand DNA
 
-11. **Brand description** — "What does your brand do? (one sentence)"
+14. **Brand description** — "What does your brand do? (one sentence)"
 
-12. **Target audience** — "Who is your target audience?"
+15. **Target audience** — "Who is your target audience?"
 
-13. **Voice guidelines** (optional) — "Any specific brand voice rules? (e.g., 'never use exclamation marks', 'always back claims with data')"
+16. **Voice guidelines** (optional) — "Any specific brand voice rules? (e.g., 'never use exclamation marks', 'always back claims with data')"
 
-14. **Industry** — "What industry/niche are you in?"
+17. **Industry** — "What industry/niche are you in?"
 
 ## Output
 
@@ -204,7 +221,17 @@ After collecting all answers, generate the `brand-profile.json` file in the proj
     "description": "...",
     "audience": "...",
     "voice": [],
-    "industry": "..."
+    "industry": "...",
+    "footer": {
+      "text": "anthropic.com",
+      "heroCta": "Swipe for more →",
+      "slideCounter": true
+    },
+    "logo": {
+      "path": "./assets/logo.svg",
+      "placement": "top-left",
+      "maxHeight": 60
+    }
   }
 }
 ```

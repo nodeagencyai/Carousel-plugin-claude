@@ -21,6 +21,14 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { dirname, resolve } from 'path';
 
 // ---------------------------------------------------------------------------
+// XML text escaping helper
+// ---------------------------------------------------------------------------
+
+function escapeXmlText(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ---------------------------------------------------------------------------
 // Arg parsing
 // ---------------------------------------------------------------------------
 
@@ -431,10 +439,86 @@ function mixColors(hex1, hex2, ratio) {
 }
 
 // ---------------------------------------------------------------------------
+// Step 6a — Header zone (logo / brand name)
+// ---------------------------------------------------------------------------
+
+function buildHeaderXml(brandProfile, fontPrimary, textColor) {
+  const logoPath = brandProfile.brand?.logo?.path;
+  const brandName = brandProfile.name;
+
+  let headerXml = '';
+
+  if (logoPath) {
+    try {
+      const resolvedPath = resolve(process.cwd(), logoPath);
+      if (logoPath.endsWith('.svg')) {
+        let logoSvg = readFileSync(resolvedPath, 'utf-8');
+        logoSvg = logoSvg.replace(/<\?xml[^?]*\?>/, '').replace(/<svg[^>]*>/, '').replace(/<\/svg>/, '');
+        // Namespace logo IDs
+        logoSvg = logoSvg.replace(/id="([^"]+)"/g, 'id="logo-$1"');
+        logoSvg = logoSvg.replace(/url\(#([^)]+)\)/g, 'url(#logo-$1)');
+        headerXml = `  <g id="header" transform="translate(50, 40) scale(0.5)">\n    ${logoSvg}\n  </g>`;
+      } else {
+        // PNG/JPG — embed as base64
+        const imgBuffer = readFileSync(resolvedPath);
+        const base64 = imgBuffer.toString('base64');
+        const ext = logoPath.split('.').pop().toLowerCase();
+        const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
+        const maxH = brandProfile.brand?.logo?.maxHeight || 60;
+        headerXml = `  <image href="data:${mime};base64,${base64}" x="50" y="40" height="${maxH}" preserveAspectRatio="xMinYMid meet"/>`;
+      }
+    } catch {
+      // Logo file not found — fall back to text
+      if (brandName) {
+        headerXml = `  <text x="60" y="90" font-family="${fontPrimary}, sans-serif" font-size="28" fill="${textColor}" opacity="0.5">${escapeXmlText(brandName)}</text>`;
+      }
+    }
+  } else if (brandName) {
+    headerXml = `  <text x="60" y="90" font-family="${fontPrimary}, sans-serif" font-size="28" fill="${textColor}" opacity="0.5">${escapeXmlText(brandName)}</text>`;
+  }
+
+  return headerXml;
+}
+
+// ---------------------------------------------------------------------------
+// Step 6b — Footer zone (divider, slide counter, footer text, hero CTA)
+// ---------------------------------------------------------------------------
+
+function buildFooterXml(brandProfile, slideNum, totalSlides, fontSecondary, captionColor, accentColor) {
+  const footerY = brandProfile.visual?.canvas?.footerStart || 1100;
+  const footerText = brandProfile.brand?.footer?.text;
+  const slideCounter = brandProfile.brand?.footer?.slideCounter !== false;
+  const heroCta = brandProfile.brand?.footer?.heroCta;
+  const width = brandProfile.visual?.canvas?.width || 1080;
+
+  let footerXml = '';
+
+  // Divider line
+  footerXml += `\n  <line x1="140" y1="${footerY + 20}" x2="920" y2="${footerY + 20}" stroke="${accentColor}" stroke-opacity="0.15" stroke-width="0.5"/>`;
+
+  // Footer text — bottom right
+  if (footerText) {
+    footerXml += `\n  <text x="900" y="${footerY + 70}" text-anchor="end" font-family="${fontSecondary}, sans-serif" font-size="16" fill="${captionColor}" opacity="0.6">${escapeXmlText(footerText)}</text>`;
+  }
+
+  // Slide counter — bottom left
+  if (slideCounter) {
+    footerXml += `\n  <text x="140" y="${footerY + 70}" font-family="${fontSecondary}, sans-serif" font-size="16" fill="${captionColor}" opacity="0.6">${slideNum} / ${totalSlides}</text>`;
+  }
+
+  // Hero CTA — slide 1 only, centered
+  if (slideNum === 1 && heroCta) {
+    footerXml += `\n  <text x="${width / 2}" y="${footerY + 130}" text-anchor="middle" font-family="${fontSecondary}, sans-serif" font-size="18" fill="${captionColor}" opacity="0.5">${escapeXmlText(heroCta)}</text>`;
+  }
+
+  return footerXml;
+}
+
+// ---------------------------------------------------------------------------
 // Step 6 — Build the final branded SVG wrapper
 // ---------------------------------------------------------------------------
 
-function buildFinalSvg(innerContent, brandProfile, slideNum) {
+function buildFinalSvg(innerContent, brandProfile, slideNum, totalSlides) {
   const width = brandProfile.visual?.canvas?.width || 1080;
   const height = brandProfile.visual?.canvas?.height || 1350;
   const bgColor =
@@ -443,6 +527,9 @@ function buildFinalSvg(innerContent, brandProfile, slideNum) {
     '#1a1a1a';
   const fontPrimary = brandProfile.visual?.fonts?.primary || 'Inter';
   const fontSecondary = brandProfile.visual?.fonts?.secondary || 'Inter';
+  const accentColor = brandProfile.visual?.colors?.accent || '#666666';
+  const captionColor = brandProfile.visual?.colors?.caption || '#999999';
+  const textColor = brandProfile.visual?.colors?.text || '#FFFFFF';
 
   // Gradient colours
   const gradientFrom =
@@ -571,6 +658,19 @@ function buildFinalSvg(innerContent, brandProfile, slideNum) {
     ? `@import url('https://fonts.googleapis.com/css2?family=${googleFonts}:wght@400;500;600;700;800;900&amp;display=swap');`
     : '';
 
+  // --- Grain texture filter ---------------------------------------------------
+  const grainFilter = `
+    <filter id="grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>`;
+
+  const grainOverlay = `  <rect width="${width}" height="${height}" filter="url(#grain)" opacity="0.03"/>`;
+
+  // --- Header & Footer -------------------------------------------------------
+  const headerXml = buildHeaderXml(brandProfile, fontPrimary, textColor);
+  const footerXml = buildFooterXml(brandProfile, slideNum, totalSlides, fontSecondary, captionColor, accentColor);
+
   // --- Assemble -------------------------------------------------------------
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
@@ -584,13 +684,18 @@ function buildFinalSvg(innerContent, brandProfile, slideNum) {
     </style>
     <linearGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="0%">
 ${stopsXml}
-    </linearGradient>${backgroundGradientDefs}
+    </linearGradient>${backgroundGradientDefs}${grainFilter}
   </defs>
 
 ${backgroundXml}
+${grainOverlay}
+${headerXml}
 
   <g id="content">
 ${innerContent}
+  </g>
+
+  <g id="footer">${footerXml}
   </g>
 </svg>`;
 }
@@ -670,7 +775,7 @@ function buildFallbackSvg(brandProfile, slideNum, totalSlides, errorMsg) {
 let finalSvg;
 
 try {
-  finalSvg = buildFinalSvg(cleanContent, brand, slideNumber);
+  finalSvg = buildFinalSvg(cleanContent, brand, slideNumber, totalSlides);
 } catch (err) {
   // If SVG build fails, use fallback
   finalSvg = buildFallbackSvg(brand, slideNumber, totalSlides, err.message);
