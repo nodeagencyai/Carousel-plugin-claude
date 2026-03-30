@@ -21,20 +21,25 @@ DESIGN SYSTEM:
   * Label: 14-18px, font-family="{{FONT_SECONDARY}}", letter-spacing: 0.08em, fill: {{COLOR_CAPTION}}, uppercase
 - BRAND GRADIENT: fill="url(#brandGradient)" is pre-defined. NEVER define <linearGradient>. Use on KEY METRICS — the big numbers that make slides memorable.
 
-SLIDE DENSITY — ADAPTIVE, NOT FIXED:
-The number of elements depends on the slide's purpose:
-- HERO slides: 4-6 elements. Headline dominates. Generous space. CTA optional.
-- DATA slides: 8-12 elements. Bars, metrics, labels, containers. Dense but organized.
-- STRUCTURE slides: 6-8 elements. Numbered items, separators, bottom insight.
+SLIDE DENSITY — ADAPTIVE:
+- HERO slides: 4-7 elements. Headline dominates. 40-50% empty. CTA optional. THIS IS YOUR CREATIVE CANVAS — see below.
+- DATA slides: 8-12 elements. Bars, metrics, containers. Dense, organized. 25-35% empty.
+- STRUCTURE slides: 6-8 elements. Numbered items, separators, bottom insight. 30-40% empty.
 
-Every slide should have AT MINIMUM:
-- Kicker label (contextual, above headline — uppercase, 14px, letter-spacing 0.1em)
-- Headline (72-96px, the primary message)
-- Subtitle or supporting line
-- At least one accent element (underline, separator, or badge)
+Every slide has AT MINIMUM: kicker (14px uppercase) + headline (72-96px) + subtitle + accent element.
 
-DATA slides add: progress bars, metric pairs, glass containers.
-The slide should feel ORGANIZED and INTENTIONAL — not empty, not cluttered.
+HERO SLIDE — YOUR CREATIVE MOMENT:
+The hero slide is where you show your design talent. Unlike data/structure slides (which follow patterns), the hero is FREEFORM. Ideas to make it unforgettable:
+- A massive typographic treatment — split the headline across the slide with dramatic sizing (one word at 120px, rest at 60px)
+- A bold accent shape — a large circle, a thick vertical bar, a geometric form that anchors the design
+- Contrast in scale — pair an enormous keyword with tiny supporting text
+- Unexpected alignment — headline right-aligned with subtitle left, or centered headline with left body
+- A visual metaphor — simple SVG shapes that represent the concept (arrows, abstract icons, connecting lines)
+- Use the brand gradient on ONE bold element — not just a word, but a shape or background element
+- Break one rule intentionally — overlap text slightly, extend an element to the edge, use unusual spacing
+The only constraint: it must stop the scroll. Everything else is creative freedom.
+
+DATA and STRUCTURE slides should follow the organized patterns (bars, numbers, containers). The hero is where you take risks.
 
 KEY METRICS ARE THE HERO:
 When the slide has data, one number should DOMINATE the slide:
