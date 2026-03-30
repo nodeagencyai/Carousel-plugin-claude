@@ -16,6 +16,14 @@ HARD BOUNDARIES (never violate):
 
 Headlines:         y >= 320, NEVER in the logo zone (y < 280)
 Last element:      y <= 1100, NEVER in the footer zone
+
+ASPECT RATIO ADAPTATION:
+The safe zone coordinates above are defaults for 1080×1350 (Instagram carousel).
+If the brand profile specifies different canvas dimensions, scale proportionally:
+- Safe zone margins: ~13% from each edge
+- Header zone: ~21% of height from top
+- Footer zone: ~19% of height from bottom
+- Content zone: the remaining ~60% of height in the middle
 ```
 
 ---

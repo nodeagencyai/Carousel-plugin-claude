@@ -12,6 +12,7 @@ DESIGN SYSTEM SPECIFICATIONS:
 - VIEWBOX: 1080x1350 | SAFE_AREA: x:{{SAFE_X_MIN}}-{{SAFE_X_MAX}}, y:73-1252
 - TYPOGRAPHY ({{FONT_PRIMARY}} & {{FONT_SECONDARY}} ONLY):
   * Headline: 64-96px, font-family="{{FONT_PRIMARY}}", letter-spacing: -0.02em, fill: {{COLOR_TEXT}}
+  * Display (optional): If {{FONT_DISPLAY}} is set, use it for HERO headlines and key metrics instead of {{FONT_PRIMARY}}. This adds typographic variety.
   * Subheadline: 28-36px, font-family="{{FONT_SECONDARY}}", fill: {{COLOR_CAPTION}}
   * Data Values: 48-96px, font-family="{{FONT_PRIMARY}}", fill: url(#brandGradient) — CONSISTENT SIZE
   Key metrics and numbers should be LARGE and commanding (60-96px) — they're the visual anchor of the slide.
@@ -28,6 +29,17 @@ SPATIAL REASONING HEURISTICS:
 2. OPTICAL ALIGNMENT: Baseline grid = 24px. Container padding = 48px/96px increments.
 3. DEPTH LAYERS: fill-opacity="0.03-0.08" for glass morphism. Never heavy opacity.
 4. ACCENT LOGIC: Brand gradient for primary data. {{COLOR_TEXT}} for emphasis. {{COLOR_CAPTION}} for secondary. {{COLOR_TERTIARY}} for tertiary.
+
+ACCENT COLOR USAGE:
+Your brand accent is {{COLOR_ACCENT}}. Use it ACTIVELY — it's what makes your carousel yours:
+- Container borders and highlight strokes (stroke="{{COLOR_ACCENT}}" stroke-opacity="0.3")
+- Badge/pill backgrounds for labels or categories (fill="{{COLOR_ACCENT}}" fill-opacity="0.15")
+- Underlines beneath key headlines (2-3px line in accent color)
+- Icon fills or circle backgrounds
+- Bar fills in charts (solid {{COLOR_ACCENT}}, not just gradient)
+- Decorative elements: dots, lines, corner accents, divider marks
+The accent color gives the carousel its brand personality. A carousel without visible accent color looks generic. Aim for 3-5 accent-colored elements per slide.
+The brand gradient (url(#brandGradient)) is for 1-2 HERO elements. Use solid {{COLOR_ACCENT}} for the rest.
 
 COMPONENT CONSTRUCTION — GUIDELINES NOT TEMPLATES:
 Each framework below is a starting point. Adapt, combine, and add visual elements as the content demands. Create custom icons, shapes, and decorative elements that fit the brand.
@@ -121,6 +133,16 @@ TECHNICAL REQUIREMENTS:
 - Gradient: use fill="url(#brandGradient)" on 1-2 key elements MAX. DO NOT define gradients.
 - NO background rect. NO <svg> wrapper. NO <defs>. NO <style>.
 
+DATA VISUALIZATION — go beyond text:
+When data is provided, VISUALIZE it. Don't just write numbers — show them:
+- Percentages → progress bars, donut segments, or filled circles
+- Comparisons → side-by-side bars or overlapping shapes
+- Rankings → sized elements (bigger = more important)
+- Trends → simple line or sparkline showing direction
+- Proportions → area-based elements (circles sized by value)
+- Counts → icon arrays (●●●●●○○○○○ for 5 out of 10)
+Simple SVG shapes communicate data faster than text. A 72px "88%" next to a filled bar is more impactful than "88% of companies report positive ROI" as plain text.
+
 {{FRAMEWORK_INSTRUCTIONS}}
 
 COLOR MODE ({{COLOR_MODE}}):
@@ -128,6 +150,15 @@ COLOR MODE ({{COLOR_MODE}}):
 - mixed_highlight: {{COLOR_TEXT}} base, OPTIONALLY highlight one keyword with gradient:
   <text fill="{{COLOR_TEXT}}" font-family="{{FONT_PRIMARY}}" font-size="84">The future is <tspan fill="url(#brandGradient)">autonomous</tspan></text>
   This is a suggestion, not a requirement. Skip the gradient keyword if the headline reads better without it.
+
+VISUAL CONSISTENCY (across all slides in this carousel):
+- Use the SAME container style on every slide (same border radius, same stroke style)
+- Use the SAME accent treatment throughout (if slide 1 uses accent underlines, keep that on all slides)
+- Maintain consistent spacing patterns
+- Data values: same font size across ALL slides
+- If you use icons, use the same icon style (all outlined OR all filled, not mixed)
+- If you use badges/pills, same shape and size throughout
+- The carousel should feel like a cohesive SET, not 5 random slides
 
 SPACING:
 - 60px minimum between major elements

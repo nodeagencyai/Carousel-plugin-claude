@@ -14,6 +14,27 @@ Check for OpenRouter API key:
 2. If not found, ask the user for their key and note they can get one at https://openrouter.ai
 3. Save the key reference for generation use
 
+## Style Preset (Start Here)
+
+Ask: "Pick a starting style — you can customize everything after."
+
+Present the 5 options:
+1. **Minimalist** — Light, airy, thin fonts, muted tones. Think Apple.
+2. **Bold** — Dark, high-contrast, vibrant accent, punchy. Think Nike.
+3. **Editorial** — Dark, serif headlines, sophisticated. Think Vogue.
+4. **Corporate** — Light, clean, structured, professional. Think McKinsey.
+5. **Neon/Tech** — Dark, monospace, bright neon accent. Think GitHub.
+6. **Custom** — Start from scratch
+
+If the user picks a preset (1-5):
+- Load the matching preset from `prompts/style-presets.md`
+- Pre-fill the brand-profile.json with those values
+- Tell the user: "I've loaded the {preset} style. Now let's customize it for your brand."
+- Skip to brand name question, then let them override any values they want
+- Values they don't change keep the preset defaults
+
+If Custom: proceed with the existing manual flow.
+
 ## Website Auto-Detection (Optional First Step)
 
 Ask: "Do you have a website I can scan to auto-detect your brand colors, fonts, and style?"
@@ -81,16 +102,34 @@ Ask these questions ONE AT A TIME:
 
    For all options, also ask: "Same background for all slides, or different for the opening slide vs. content slides?"
 
-4. **Fonts** — "What fonts should we use?"
+4. **Platform / Aspect ratio** — "What platform are you primarily designing for?"
+   - Instagram Carousel (1080x1350) — default
+   - Instagram Square (1080x1080)
+   - LinkedIn Post (1200x627)
+   - Stories (1080x1920)
+   - Presentation (1920x1080)
+
+   This sets canvas dimensions and safe zones proportionally:
+   - Instagram Carousel: 1080x1350, safe y:300-1100, safe x:140-920
+   - Instagram Square: 1080x1080, safe y:200-880, safe x:140-920
+   - LinkedIn Post: 1200x627, safe y:80-527, safe x:100-1100
+   - Stories: 1080x1920, safe y:200-1720, safe x:100-980
+   - Presentation: 1920x1080, safe y:100-930, safe x:150-1770
+
+5. **Fonts** — "What fonts should we use?"
    - Primary font (headlines) — Google Font name or system font
    - Secondary font (body text) — Google Font name or system font
    - Suggest popular pairings if they're unsure: Space Grotesk + Inter, Montserrat + Open Sans, Poppins + Nunito
 
-5. **Logo** (optional) — "Do you have a logo file (SVG or PNG) to include in the header area?"
+   Then ask: "Optional: Do you have a display/headline font for extra impact on hero slides?"
+   - If yes: save as `visual.fonts.display` in brand-profile.json
+   - If no: hero slides use the primary font (default — `visual.fonts.display` stays `null`)
+
+6. **Logo** (optional) — "Do you have a logo file (SVG or PNG) to include in the header area?"
    - If yes, note the file path
    - If no, skip — slides will use full header space
 
-6. **Design mode** — "Do you prefer dark or light slides?"
+7. **Design mode** — "Do you prefer dark or light slides?"
    - **Dark mode** (default, recommended): Dark backgrounds with light text. Best for social media feeds.
      - Defaults: text=#FFFFFF, caption=#999999, primary=#1a1a1a
    - **Light mode**: Light backgrounds with dark text. Clean, minimal feel.
@@ -100,30 +139,30 @@ Ask these questions ONE AT A TIME:
 
 ## Stage 2: Content Style
 
-7. **Text density** — "How text-heavy should your carousels be?"
+8. **Text density** — "How text-heavy should your carousels be?"
    - Minimal: Big bold statements, few words, maximum visual impact
    - Balanced: Mix of data points and narrative text (recommended)
    - Dense: Data-heavy, lots of information, infographic style
 
-8. **Tone** — "What tone fits your brand?"
+9. **Tone** — "What tone fits your brand?"
    - Educational: Informative, teaching-focused
    - Professional: Corporate, polished
    - Casual: Friendly, conversational
    - Bold: Provocative, attention-grabbing
 
-9. **Visual frameworks** — "Any preferred visual styles for your slides?"
+10. **Visual frameworks** — "Any preferred visual styles for your slides?"
    - Show the options: data tables, bar charts, quadrant matrices, stacked layers, flow diagrams, or "auto" (let AI decide)
    - Default to "auto" if unsure
 
 ## Stage 3: Brand DNA
 
-10. **Brand description** — "What does your brand do? (one sentence)"
+11. **Brand description** — "What does your brand do? (one sentence)"
 
-11. **Target audience** — "Who is your target audience?"
+12. **Target audience** — "Who is your target audience?"
 
-12. **Voice guidelines** (optional) — "Any specific brand voice rules? (e.g., 'never use exclamation marks', 'always back claims with data')"
+13. **Voice guidelines** (optional) — "Any specific brand voice rules? (e.g., 'never use exclamation marks', 'always back claims with data')"
 
-13. **Industry** — "What industry/niche are you in?"
+14. **Industry** — "What industry/niche are you in?"
 
 ## Output
 
@@ -140,7 +179,7 @@ After collecting all answers, generate the `brand-profile.json` file in the proj
       "caption": "#999999",
       "gradient": { "from": "#FF6B35", "to": "#FFB347" }
     },
-    "fonts": { "primary": "Inter", "secondary": "Inter" },
+    "fonts": { "primary": "Inter", "secondary": "Inter", "display": null },
     "background": {
       "style": "solid_dark",
       "color": "#1a1a1a",
