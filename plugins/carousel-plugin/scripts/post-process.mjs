@@ -354,7 +354,37 @@ function enforceFonts(svgStr, brandProfile) {
 cleanContent = enforceFonts(cleanContent, brand);
 
 // ---------------------------------------------------------------------------
-// Step 4f — Replace ALL custom gradient references with brandGradient
+// Step 4f — Fix text overflow (reduce font-size for text that's too wide)
+// ---------------------------------------------------------------------------
+
+function fixTextOverflow(svgStr, brandProfile) {
+  const safeWidth = (brandProfile.visual?.canvas?.safeXMax || 920) - (brandProfile.visual?.canvas?.safeXMin || 140);
+
+  return svgStr.replace(/<text([^>]*)>([^<]*(?:<tspan[^>]*>[^<]*<\/tspan>[^<]*)*)<\/text>/gi, (match, attrs, content) => {
+    const sizeMatch = attrs.match(/font-size="(\d+(?:\.\d+)?)"/);
+    if (!sizeMatch) return match;
+
+    let fontSize = parseFloat(sizeMatch[1]);
+    if (fontSize < 40) return match; // Only fix large headlines
+
+    // Estimate text width: strip tspan tags to get raw text
+    const rawText = content.replace(/<\/?tspan[^>]*>/g, '').trim();
+    const charWidth = fontSize * 0.55; // Rough average char width
+    const estimatedWidth = rawText.length * charWidth;
+
+    if (estimatedWidth <= safeWidth) return match; // Fits fine
+
+    // Calculate new font size to fit
+    const newSize = Math.max(40, Math.floor(safeWidth / (rawText.length * 0.55)));
+
+    return match.replace(`font-size="${fontSize}"`, `font-size="${newSize}"`);
+  });
+}
+
+cleanContent = fixTextOverflow(cleanContent, brand);
+
+// ---------------------------------------------------------------------------
+// Step 4g — Replace ALL custom gradient references with brandGradient
 // ---------------------------------------------------------------------------
 // Gemini creates its own gradients (heroGlow, subtleWarm, contentGlow, etc.)
 // but we strip their <defs>, so those references point to nothing.

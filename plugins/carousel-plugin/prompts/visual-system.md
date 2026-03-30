@@ -99,11 +99,16 @@ CAROUSEL ANTI-PATTERNS — NEVER DO THESE:
 - BOTTOM BUFFER: NOTHING below y:{{FOOTER_START}}
 - SIDE MARGINS: 50px minimum from edges
 
+TEXT OVERFLOW PREVENTION:
+- Headlines longer than 5 words: use text-anchor="middle" at x=530, OR reduce font-size to fit within x:140-920
+- ALWAYS calculate: text width ≈ character_count × font_size × 0.55. If result > 780px (safe width), reduce font-size or split into two lines.
+- For two-line headlines: use two <text> elements with 100-120px vertical gap
+- NEVER let text extend beyond x=920 — it gets clipped
+
 OUTPUT REQUIREMENTS:
 - NO <svg> wrapper. NO <defs>. NO <style>. NO custom gradients.
 - ONLY content elements (text, rect, circle, path, g, line, tspan)
 - Unique IDs for all elements
-- Include coordinate comments showing validation
 
 ---
 
