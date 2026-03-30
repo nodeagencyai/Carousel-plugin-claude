@@ -109,40 +109,120 @@ Ask these questions ONE AT A TIME:
    - Store the choice in `visual.designMode` ("dark" or "light")
    - Pre-fill color defaults based on the selection (user can still override in the Colors question)
 
-## Background Preferences
+## Background Preferences (Decision Tree)
 
-Ask these questions to determine how backgrounds should be generated.
+Guide the user through a branching conversation to discover their ideal background. Ask one question at a time, and follow the branch they choose.
 
-7. **Hero intensity** — "How dramatic should the hero slide (slide 1) background be?"
-   - Minimal — almost flat, hint of accent in one corner
-   - Moderate — visible gradient or geometric elements, clean (recommended)
-   - Bold — strong accent presence, prominent shapes
+### Branch 1: "What's the overall vibe for your backgrounds?"
 
-8. **Content slides** — "Same background for content slides, or different?"
-   - Same as hero
-   - Subtler version — cleaner for readability (recommended)
-   - Plain — solid base color only
+Present these options naturally:
 
-9. **Background style** — "What style of background?"
-   - Geometric — diagonal lines, clean bands, architectural (Stripe/Linear style)
-   - Mesh gradient — smooth blurred color pools (Apple/Figma style)
-   - Textured — noise, grain, paper feel (editorial/luxury)
-   - Minimal — solid color + subtle corner accent (clean/corporate)
-   - Upload my own — user provides PNG/JPG files
+a) **Textured / Paper** -- tactile, physical, editorial feel. Go to Branch 2A.
+b) **Gradient** -- smooth color transitions, modern design tool aesthetic. Go to Branch 2B.
+c) **Futuristic / Tech** -- dark chrome, neon, holographic. Go to Branch 2C.
+d) **Clean / Minimal** -- solid or near-solid, maximum restraint. Go to Branch 2D.
+e) **Upload my own** -- ask for hero and content background file paths (PNG/JPG), save paths to brand profile, done.
 
-10. **Accent intensity** — "How much accent color in the background?"
-    - Subtle (5-15% of area, edges only)
-    - Moderate (15-30%, visible presence)
-    - Bold (30-50%, strong brand presence)
+### Branch 2A: Textured / Paper
 
-11. **Center clean** — "Keep the center clean for content readability?"
-    - Yes (recommended)
-    - No, gradient can flow through center
+Ask: "What kind of paper feel?"
 
-If user chose "Upload my own" for style:
-- Ask for hero background file path (PNG/JPG)
-- Ask for content background file path (or same as hero)
-- Save paths to brand-profile.json
+a) **Vintage parchment** -- aged, warm, slightly distressed. Like a 100-year-old letter.
+b) **Clean matte** -- modern uncoated card stock, subtle grain. Think Aesop packaging.
+c) **Linen / fabric** -- fine woven texture, elegant and tactile.
+d) **Concrete / industrial** -- raw, cool, brutalist. Visible pits and subtle variations.
+
+Save: `style="textured"`, `textureType="{choice}"` (one of: `vintage_parchment`, `clean_matte`, `linen`, `concrete`)
+
+Then skip to the Final Question.
+
+### Branch 2B: Gradient
+
+Ask: "What style of gradient?"
+
+a) **Noise gradient** -- smooth color transitions with fine grain overlay. Think Figma, creative coding.
+b) **Mesh gradient** -- organic flowing color pools, blurred. Think Apple Music, iOS widgets.
+c) **Linear sweep** -- clean diagonal or horizontal color bands. Think Stripe.com, Linear.app.
+d) **Radial glow** -- color emanating from a single point. Think Apple keynote stage lighting.
+
+Then ask: "How much accent color?"
+
+a) **Subtle** -- accent barely visible, 10-15% of area. Edges only.
+b) **Medium** -- clear presence, 20-30% of area.
+c) **Strong** -- bold statement, 30-50% of area.
+
+Then ask: "Grainy or smooth?"
+
+a) **Grainy** -- visible noise texture across the surface.
+b) **Smooth** -- no texture, pure clean gradient.
+
+Save: `style="gradient"`, `gradientType="{choice}"` (one of: `noise`, `mesh`, `linear_sweep`, `radial_glow`), `intensity="{choice}"` (one of: `subtle`, `medium`, `strong`), `texture="{choice}"` (one of: `grainy`, `smooth`)
+
+Then skip to the Final Question.
+
+### Branch 2C: Futuristic / Tech
+
+Ask: "What feel?"
+
+a) **Dark chrome** -- metallic, reflective, premium dark. Brushed metal with depth.
+b) **Neon glow** -- bright accent on deep dark, cyberpunk. The glow bleeds into darkness.
+c) **Holographic** -- iridescent, prismatic shifts. Like holographic foil.
+d) **Grid / wireframe** -- subtle technical grid pattern. Blueprint, code editor feel.
+
+Save: `style="futuristic"`, `futureType="{choice}"` (one of: `dark_chrome`, `neon_glow`, `holographic`, `grid`)
+
+Then skip to the Final Question.
+
+### Branch 2D: Clean / Minimal
+
+Ask: "How minimal?"
+
+a) **Solid color** -- pure flat, no gradient at all. No Gemini generation needed.
+b) **Solid + subtle corner accent** -- 95% flat, tiny warmth in one corner. Maximum restraint.
+c) **Very subtle gradient** -- barely perceptible tonal shift, same color family.
+
+Save: `style="minimal"`, `minimalType="{choice}"` (one of: `solid`, `corner_accent`, `subtle_gradient`)
+
+Then skip to the Final Question.
+
+### Final Question (ALL paths):
+
+Ask: "Hero slide (slide 1) -- same background as content slides, or more dramatic?"
+
+a) **Same as content slides** -- consistent across all slides.
+b) **Slightly more dramatic** (recommended) -- hero gets ~50% more accent intensity.
+c) **Significantly more dramatic** -- hero gets double accent intensity and extra visual punch.
+
+Save: `heroDramatic="{choice}"` (one of: `same`, `slightly`, `significantly`)
+
+### What to save in brand-profile.json:
+
+The background section should look like this (example for a noise gradient):
+
+```json
+{
+  "visual": {
+    "background": {
+      "style": "gradient",
+      "gradientType": "noise",
+      "intensity": "medium",
+      "texture": "grainy",
+      "heroDramatic": "slightly",
+      "color": "#0A0A0A",
+      "heroImage": null,
+      "contentImage": null
+    }
+  }
+}
+```
+
+Notes on the saved fields:
+- `style` is always set: `"textured"`, `"gradient"`, `"futuristic"`, `"minimal"`, or `"upload"`
+- Sub-type fields (`textureType`, `gradientType`, `futureType`, `minimalType`) are only present for their respective style
+- `intensity` and `texture` are only present for the `"gradient"` style
+- `heroDramatic` is always present: `"same"`, `"slightly"`, or `"significantly"`
+- `color` is the base/fallback color (from the Colors question)
+- `heroImage` and `contentImage` are `null` until `/carousel:backgrounds` generates them (or user uploads)
 
 ## Branding Frame
 
@@ -230,12 +310,12 @@ After collecting all answers, generate the `brand-profile.json` file in the proj
     },
     "fonts": { "primary": "Inter", "secondary": "Inter", "display": null },
     "background": {
-      "style": "geometric",
-      "intensity": "moderate",
-      "heroDramatic": "moderate",
-      "contentVariant": "subtler",
-      "centerClean": true,
-      "color": "#f5f4ed",
+      "style": "gradient",
+      "gradientType": "noise",
+      "intensity": "medium",
+      "texture": "grainy",
+      "heroDramatic": "slightly",
+      "color": "#0A0A0A",
       "heroImage": null,
       "contentImage": null
     },
@@ -280,12 +360,11 @@ After collecting all answers, generate the `brand-profile.json` file in the proj
 
 When writing background choices:
 - **Upload my own**: Set `visual.background.style` to `"upload"`, store paths in `visual.background.heroImage` and/or `visual.background.contentImage`
-- **Geometric / Mesh gradient / Textured / Minimal**: Set `visual.background.style` to the chosen style (`"geometric"`, `"mesh"`, `"textured"`, `"minimal"`), leave `heroImage` and `contentImage` as `null` until `/carousel:backgrounds` generates them
-- For all options, `visual.background.color` is the solid fallback color
-- `visual.background.intensity` maps to the accent intensity answer (`"subtle"`, `"moderate"`, `"bold"`)
-- `visual.background.heroDramatic` maps to the hero intensity answer (`"minimal"`, `"moderate"`, `"bold"`)
-- `visual.background.contentVariant` maps to the content slides answer (`"same"`, `"subtler"`, `"plain"`)
-- `visual.background.centerClean` maps to the center clean answer (`true` / `false`)
+- **All other styles**: Set `visual.background.style` to the chosen style (`"textured"`, `"gradient"`, `"futuristic"`, `"minimal"`), leave `heroImage` and `contentImage` as `null` until `/carousel:backgrounds` generates them
+- Sub-type fields are style-specific: `textureType` for textured, `gradientType` for gradient, `futureType` for futuristic, `minimalType` for minimal
+- `intensity` and `texture` fields are only used with the `"gradient"` style
+- `heroDramatic` is always set: `"same"`, `"slightly"`, or `"significantly"`
+- `visual.background.color` is always the solid fallback color
 
 Note: The old `brand.footer` and `brand.logo` fields have been migrated to `brand.frame.footer` and `brand.frame.logo`. The `brand.frame.logo` now includes `showOn` ("all" or "hero") and the `brand.frame.footer` now includes `textPlacement`, `counterPlacement`, and `dividerStyle`.
 

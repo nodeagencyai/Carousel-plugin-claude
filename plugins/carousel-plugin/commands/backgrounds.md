@@ -1,24 +1,27 @@
 ---
 name: carousel:backgrounds
-description: Generate premium branded background images for your carousel slides using Gemini image generation. Builds prompts dynamically from your brand-profile.json background preferences.
+description: Generate premium branded background images for your carousel slides using Gemini image generation. Builds prompts dynamically from the decision tree output in brand-profile.json.
 ---
 
 # Background Generator
 
-Generate premium branded background images using Gemini's image generation. Prompts are built dynamically from the background preferences in `brand-profile.json` — style, intensity, hero drama level, and center cleanliness all shape the final prompt.
+Generate premium branded background images using Gemini's image generation. Prompts are built dynamically from the specific decision tree path the user took during `/carousel:setup` -- the style, sub-type, intensity, texture, and hero drama level all shape the final prompt.
 
 ## Pre-flight
 
-1. Read `brand-profile.json` for the full profile. Key fields:
-   - `visual.background.style` — `"geometric"` | `"mesh"` | `"textured"` | `"minimal"` | `"upload"`
-   - `visual.background.intensity` — `"subtle"` | `"moderate"` | `"bold"`
-   - `visual.background.heroDramatic` — `"minimal"` | `"moderate"` | `"bold"`
-   - `visual.background.contentVariant` — `"same"` | `"subtler"` | `"plain"`
-   - `visual.background.centerClean` — `true` | `false`
-   - `visual.background.color` — base/fallback color
-   - `visual.colors.accent` — accent color
-   - `visual.designMode` — `"dark"` | `"light"`
-   - `visual.canvas` — dimensions and safe zones
+1. Read `brand-profile.json` for the full profile. Key background fields:
+   - `visual.background.style` -- `"textured"` | `"gradient"` | `"futuristic"` | `"minimal"` | `"upload"`
+   - `visual.background.textureType` -- (textured only) `"vintage_parchment"` | `"clean_matte"` | `"linen"` | `"concrete"`
+   - `visual.background.gradientType` -- (gradient only) `"noise"` | `"mesh"` | `"linear_sweep"` | `"radial_glow"`
+   - `visual.background.futureType` -- (futuristic only) `"dark_chrome"` | `"neon_glow"` | `"holographic"` | `"grid"`
+   - `visual.background.minimalType` -- (minimal only) `"solid"` | `"corner_accent"` | `"subtle_gradient"`
+   - `visual.background.intensity` -- (gradient only) `"subtle"` | `"medium"` | `"strong"`
+   - `visual.background.texture` -- (gradient only) `"grainy"` | `"smooth"`
+   - `visual.background.heroDramatic` -- `"same"` | `"slightly"` | `"significantly"`
+   - `visual.background.color` -- base/fallback color
+   - `visual.colors.accent` -- accent color
+   - `visual.designMode` -- `"dark"` | `"light"`
+   - `visual.canvas` -- dimensions and safe zones
 2. Check for Google API key: look for `GEMINI_API_KEY` or `DEFAULT_GEMINI_KEY` in environment or `backend/.env`
 3. If no key found, ask the user for one
 
@@ -31,196 +34,240 @@ If `visual.background.style` is `"upload"`:
 - If paths are missing, ask the user for hero and content background file paths (PNG/JPG)
 - Copy files to `./brand-assets/backgrounds/hero-bg.png` and `content-bg.png`
 - Update `brand-profile.json` with the paths
-- Skip all Gemini generation — done
+- Skip all Gemini generation -- done
+
+## Solid Color Flow
+
+If `visual.background.style` is `"minimal"` and `visual.background.minimalType` is `"solid"`:
+- No Gemini generation needed
+- Create a solid-color PNG at `canvas.width` x `canvas.height` using the base color
+- Save as both `hero-bg.png` and `content-bg.png`
+- Update `brand-profile.json` with paths
+- Done
 
 ## Prompt Builder System
 
-For generated styles (`"geometric"`, `"mesh"`, `"textured"`, `"minimal"`), build the Gemini prompt dynamically from brand profile values.
+For all other style/sub-type combinations, build the Gemini prompt dynamically from the specific decision tree path.
 
-### Base Prompt Template
-
-Every prompt starts with this structure. All `{values}` come from brand-profile.json:
+### Base Prompt (always included)
 
 ```
-Generate a premium abstract background for a social media carousel {slide_type} slide.
-
-DIMENSIONS: {canvas.width}x{canvas.height} pixels (portrait orientation)
-
-COLOR PALETTE:
-- Base color: {background.color} (this should dominate the image)
-- Accent color: {colors.accent}
-- Design mode: {designMode}
-
-{style_block}
-
-{intensity_block}
-
-{center_block}
-
-{drama_block}
-
-{design_mode_block}
-
-ABSOLUTE RULES:
-- NO text of any kind
-- NO logos or symbols
-- NO objects or recognizable shapes
-- Pure abstract background art only
-- Professional quality, not AI-slop
-- Must work as a background with text overlaid on top
+Generate a premium abstract background image.
+Dimensions: {canvas.width}x{canvas.height} pixels, portrait orientation.
+Base color: {background.color}
+Accent color: {colors.accent}
+Design mode: {designMode}
 ```
 
-### Style Blocks
+### Style-Specific Prompt Blocks
 
-Insert the matching block based on `visual.background.style`:
+Append the matching block based on `style` + sub-type. Each path produces a distinct, opinionated prompt.
 
-**geometric:**
+#### TEXTURED paths (`style == "textured"`)
+
+**vintage_parchment:**
 ```
-STYLE: GEOMETRIC
-Clean diagonal bands, parallel lines, solid edges. Architectural precision. NOT blurry.
-Think Stripe.com hero. Sharp angles, clean intersections, mathematical feel.
-Use the accent color for select geometric elements against the base color.
-Bands and lines should feel intentional and structured, not random.
+Style: VINTAGE PARCHMENT
+Aged warm paper with natural imperfections. Slightly yellowed, with subtle fiber texture.
+Uneven tone variations suggesting real aged paper. Delicate, fragile, historical feel.
+Like a 100-year-old letter or vintage book page. The accent color appears as very faint staining.
+```
+
+**clean_matte:**
+```
+Style: CLEAN MATTE PAPER
+Modern uncoated card stock. Fine uniform grain. Premium stationery feel.
+Think: Aesop packaging, luxury business card. Subtle but tactile.
+The accent color as a nearly imperceptible warm shift in one area.
+```
+
+**linen:**
+```
+Style: LINEN / FABRIC TEXTURE
+Fine woven texture visible at close inspection. Elegant, tactile, textile.
+Like high-thread-count linen or premium canvas. Warm and organic.
+Accent color as subtle tonal warmth.
+```
+
+**concrete:**
+```
+Style: CONCRETE / INDUSTRIAL
+Raw concrete or plaster surface. Cool gray tones. Brutalist, minimal.
+Visible texture: tiny pits, subtle variations, industrial materiality.
+Accent color as a very faint warm wash in one area.
+```
+
+#### GRADIENT paths (`style == "gradient"`)
+
+**noise:**
+```
+Style: NOISE GRADIENT
+Smooth color transitions between base ({background.color}) and accent ({colors.accent}).
+{IF texture == "grainy": "Fine visible grain/noise overlay across the entire surface."}
+{IF texture == "smooth": "Smooth, no texture -- pure clean gradient."}
+The colors should blend organically, not in sharp bands.
+Think: modern design tools, Figma backgrounds, creative coding art.
 ```
 
 **mesh:**
 ```
-STYLE: MESH GRADIENT
-Smooth flowing gradient pools with large blur radius. Organic transitions.
-Think Apple Music. Soft color pools that blend seamlessly into each other.
-The accent color creates warm/cool pools against the base color.
-No hard edges — everything should feel like watercolor or aurora borealis.
-Subtle grain texture across the surface for premium tactile feel.
+Style: MESH GRADIENT
+Organic flowing color pools with soft edges. Multiple anchor points of color.
+Blurred transitions. Think: Apple Music, iOS widgets, soft aurora.
+{IF texture == "grainy": "Add fine grain texture overlay for tactile premium feel."}
+{IF texture == "smooth": "Keep completely smooth -- no texture, pure color flow."}
 ```
 
-**textured:**
+**linear_sweep:**
 ```
-STYLE: TEXTURED
-Fine noise/grain, paper-like surface, tactile. Think luxury stationery or editorial magazine.
-The surface should feel physical — like premium card stock or handmade paper.
-Accent color appears as very subtle tonal shifts, not distinct shapes.
-Grain should be fine and uniform, not chunky or digital-looking.
-```
-
-**minimal:**
-```
-STYLE: MINIMAL
-Almost entirely base color. One very subtle accent wash in one corner.
-Think corporate clean. The background should almost disappear behind content.
-Maximum restraint — if in doubt, make it more subtle.
-Accent color at most a gentle wash, never a distinct shape or gradient.
+Style: LINEAR SWEEP
+Clean geometric color transition. Diagonal or horizontal.
+Solid bands or smooth linear gradient. Architectural, precise.
+Think: Stripe.com headers, Linear.app.
+{IF texture == "grainy": "Overlay fine noise/grain for depth."}
+{IF texture == "smooth": "Pure clean gradient, no texture."}
 ```
 
-### Intensity Blocks
+**radial_glow:**
+```
+Style: RADIAL GLOW
+Accent color emanating from a single point (top-center or one corner).
+Gradual fade into base color. Atmospheric, like stage lighting.
+Think: Apple keynote stage, spotlight effect.
+{IF texture == "grainy": "Add subtle grain overlay."}
+{IF texture == "smooth": "Keep smooth and clean."}
+```
 
-Insert based on `visual.background.intensity`:
+For ALL gradient paths, also append the intensity block:
 
 **subtle:**
 ```
 ACCENT INTENSITY: SUBTLE
-Accent color covers max 10-15% of the image area. At edges and corners only.
-The base color should dominate 85-90% of the visible area.
-Accent presence should be barely noticeable — a whisper, not a statement.
+Accent covers max 10-15% of image area. Edges and corners only. The base color dominates.
 ```
 
-**moderate:**
+**medium:**
 ```
-ACCENT INTENSITY: MODERATE
-Accent color covers 20-30% of the image area. Visible but balanced with base.
-Clear brand presence without overwhelming the content areas.
-The accent should feel intentional but not dominant.
+ACCENT INTENSITY: MEDIUM
+Accent covers 20-30%. Clear presence but not overwhelming.
 ```
 
-**bold:**
+**strong:**
 ```
-ACCENT INTENSITY: BOLD
-Accent color covers 30-50% of the image area. Strong brand presence.
-The accent should make a statement while still leaving readable areas.
-Bold does not mean chaotic — keep it structured and premium.
+ACCENT INTENSITY: STRONG
+Accent covers 30-50%. Bold statement. Still leave readable areas for text.
 ```
 
-### Center Clean Block
+#### FUTURISTIC paths (`style == "futuristic"`)
 
-Insert based on `visual.background.centerClean`:
-
-**true (recommended):**
+**dark_chrome:**
 ```
-CENTER ZONE: CLEAN
-The CENTER of the image (roughly middle 60%) must be CLEANER and more subtle.
-This is where text content will be placed — readability is critical.
-Push all color action, gradients, and visual interest to the EDGES and CORNERS.
-Think of the background as a frame — color wraps the edges, the center breathes.
-Safe zone for content: x:{canvas.safeXMin}-{canvas.safeXMax}, y:{canvas.contentStart}-{canvas.footerStart}
+Style: DARK CHROME
+Metallic, reflective dark surface. Subtle specular highlights.
+Premium automotive finish. Brushed metal feel with depth.
+Accent color as a very subtle reflection or edge highlight.
 ```
 
-**false:**
+**neon_glow:**
 ```
-CENTER ZONE: OPEN
-The gradient and visual elements can flow through the center of the image.
-Still ensure enough contrast for text readability, but the composition is free-form.
-Content will be overlaid with text shadows or backing shapes if needed.
-```
-
-### Drama Block (Hero vs Content)
-
-For the **hero slide**, insert based on `visual.background.heroDramatic`:
-
-**minimal:**
-```
-DRAMA LEVEL: MINIMAL
-This is the hero/opening slide but keep it restrained.
-Subtle accent presence — almost like a content slide with slightly more warmth.
+Style: NEON GLOW
+Deep dark base with accent color ({colors.accent}) as a bright neon glow.
+The glow should feel like it's emitting light -- bleeding slightly into the dark.
+Cyberpunk, terminal aesthetic. Sharp contrast between dark and bright.
 ```
 
-**moderate:**
+**holographic:**
 ```
-DRAMA LEVEL: MODERATE
-This is the hero/opening slide — more visual impact than content slides.
-Visible gradient or pattern presence, but still clean and professional.
-Top 20% can have accent color presence (logo area). Bottom 20% can have subtle warmth (footer area).
-```
-
-**bold:**
-```
-DRAMA LEVEL: BOLD
-This is the hero/opening slide — make it dramatic and eye-catching.
-Strong accent color presence. This slide should stop the scroll.
-Still keep content areas readable, but the overall impression should be bold and premium.
+Style: HOLOGRAPHIC
+Iridescent, prismatic color shifts. Rainbow-adjacent but controlled.
+Think: holographic foil, oil-on-water effect. Premium and futuristic.
+Subtle and premium, not garish.
 ```
 
-For the **content slide**, adapt based on `visual.background.contentVariant`:
+**grid:**
+```
+Style: GRID / WIREFRAME
+Subtle technical grid pattern on dark background. Thin lines.
+Think: blueprint, technical drawing, code editor background.
+The grid should be very subtle (5-8% opacity). Clean and technical.
+```
+
+#### MINIMAL paths (`style == "minimal"`)
+
+**corner_accent:**
+```
+Style: MINIMAL WITH CORNER ACCENT
+95% solid base color. One very subtle accent wash in one corner.
+Almost invisible -- just enough to suggest depth and warmth.
+Maximum restraint.
+```
+
+**subtle_gradient:**
+```
+Style: BARELY-THERE GRADIENT
+Nearly flat base color with an imperceptible tonal shift.
+Same color family -- just 3-5% lighter or warmer in the center.
+If someone has to squint to see the gradient, it's right.
+```
+
+(Note: `solid` is handled by the Solid Color Flow above -- no Gemini call needed.)
+
+### Hero vs Content Variant
+
+Generate TWO backgrounds: one hero, one content.
+
+#### Content slide prompt
+
+Always append to the content slide prompt:
+```
+This is a CONTENT slide -- text readability is the #1 priority.
+Reduce accent intensity by ~40% compared to the hero slide.
+The center must be very clean. Accent color only at the far edges, very soft.
+```
+
+#### Hero slide prompt
+
+Modify based on `heroDramatic`:
 
 **same:**
+No modification -- use the same prompt as content slides (without the content-slide reduction).
+
+**slightly:**
+Append:
 ```
-This is a content slide. Use the SAME visual treatment as the hero slide.
-Maintain consistent intensity and style across all slides.
+This is the HERO slide. Increase accent intensity by ~50% compared to a content slide.
+Slightly more visual drama and depth. Still professional and premium.
 ```
 
-**subtler:**
+**significantly:**
+Append:
 ```
-This is a CONTENT slide — text, data, and visuals need to be clearly readable.
-Much subtler than the hero slide. Reduce accent presence by ~50%.
-The center must be very clean. Accent color only at the far edges, very soft.
-Think: premium stationery, not a poster.
-```
-
-**plain:**
-```
-This is a CONTENT slide with PLAIN background.
-Use almost entirely the base color. Minimal to no accent color.
-A solid, clean canvas for maximum content readability.
-At most, a barely-perceptible tonal variation to avoid feeling flat.
+This is the HERO slide. Make this dramatic and eye-catching.
+Double the accent intensity. Strong visual impact -- this slide stops the scroll.
+Bold color presence and depth. Still keep text areas readable.
 ```
 
-### Design Mode Block
+### Layout Rules (always appended)
 
-Insert based on `visual.designMode`:
+```
+LAYOUT RULES:
+- The CENTER of the image (middle 60%) must be cleaner than the edges
+- Text content will be overlaid -- ensure readability
+- Top 20% and bottom 20% can have slightly different treatment (header/footer zones)
+
+ABSOLUTE RULES:
+- NO text, NO logos, NO symbols, NO objects
+- Pure abstract background only
+- Professional quality
+```
+
+### Design Mode Block (always appended)
 
 **dark:**
 ```
 ATMOSPHERE: DARK MODE
 Dark, moody atmosphere. Deep shadows. The accent color glows against darkness.
-The base color is dark — accent elements should feel like they emit light.
+The base color is dark -- accent elements should feel like they emit light.
 ```
 
 **light:**
@@ -232,7 +279,7 @@ Clean and airy. The accent should feel like sunlight or a gentle wash.
 
 ## API Call
 
-Use the Google AI API directly (NOT OpenRouter — it does not support image generation):
+Use the Google AI API directly (NOT OpenRouter -- it does not support image generation):
 
 ```python
 import urllib.request, json, base64
@@ -263,9 +310,9 @@ for part in data["candidates"][0]["content"]["parts"]:
 
 ## Generation Flow
 
-1. **Build hero prompt**: Assemble the base template with style block + intensity block + center block + hero drama block + design mode block
+1. **Build hero prompt**: Base prompt + style-specific block + hero variant block + layout rules + design mode block
 2. **Call Gemini** for hero background, save to `./brand-assets/backgrounds/hero-bg.png`
-3. **Build content prompt**: Same base template but swap the drama block for the content variant block
+3. **Build content prompt**: Base prompt + style-specific block (with ~40% reduced intensity language) + content variant block + layout rules + design mode block
 4. **Call Gemini** for content background, save to `./brand-assets/backgrounds/content-bg.png`
 5. **Update `brand-profile.json`**:
 
@@ -273,18 +320,14 @@ for part in data["candidates"][0]["content"]["parts"]:
 {
   "visual": {
     "background": {
-      "style": "{original style}",
-      "intensity": "{original intensity}",
-      "heroDramatic": "{original heroDramatic}",
-      "contentVariant": "{original contentVariant}",
-      "centerClean": true,
-      "color": "{original color}",
       "heroImage": "./brand-assets/backgrounds/hero-bg.png",
       "contentImage": "./brand-assets/backgrounds/content-bg.png"
     }
   }
 }
 ```
+
+(Merge into existing background object -- do not overwrite style/type/intensity fields.)
 
 6. **Show the user** the generated backgrounds (use Read tool to display the images)
 7. Ask if they're happy or want to regenerate
@@ -295,13 +338,13 @@ If the user doesn't like the result, ask what they'd change. Common feedback and
 
 | User says | Prompt modification |
 |-----------|-------------------|
-| "more subtle" | Reduce intensity one level (bold→moderate, moderate→subtle) |
-| "less geometric" | Switch style block to mesh or minimal |
-| "more color" | Increase intensity one level |
+| "more subtle" | Reduce intensity language (strong->medium, medium->subtle) |
+| "more color" | Increase intensity language one level |
 | "too busy" | Add "Reduce visual complexity by 50%. Fewer elements, more negative space." |
 | "too dark" | Add "Lighten the base color by 15-20%. More luminosity overall." |
 | "too flat" | Add "More depth and dimension. Subtle shadow layers and tonal variation." |
 | "center isn't clean enough" | Reinforce: "The center 60% must be ALMOST SOLID base color. Push ALL visual elements to the outer 20% edges." |
+| "try a different sub-type" | Switch to a different sub-type within the same style family and regenerate |
 | Custom feedback | Append the user's exact words as an additional instruction block |
 
 After modifying the prompt, regenerate and replace the files. The brand-profile.json values stay the same unless the user explicitly wants to change their preferences.

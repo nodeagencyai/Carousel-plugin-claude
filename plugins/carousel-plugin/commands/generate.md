@@ -86,10 +86,14 @@ Before calling Gemini, fill ALL placeholders in the visual system prompt and fra
 | {{EXCLUDED_FRAMEWORKS}} | content.excludedFrameworks | [] |
 | {{AESTHETIC_RULES}} | from design-system skill | (per carousel) |
 | {{VISUAL_SIGNATURE}} | chosen during Step 1b | (per carousel) |
+| {{PURPOSE}} | from strategy slide data | (per slide) |
+| {{LAYOUT_STRATEGY}} | from strategy slide data | centered_void |
+| {{VISUAL_WEIGHT}} | from strategy slide data | balanced |
+| {{COLOR_MODE}} | from strategy slide data | white_dominant |
 
 ### Derived values (compute from brand profile):
-- {{GLASS_FILL}}: If designMode="dark" → COLOR_TEXT. If "light" → BACKGROUND_COLOR
-- {{GLASS_OPACITY}}: If dark → 0.04. If light → 0.06
+- {{GLASS_FILL}}: If designMode="dark" → COLOR_TEXT. If "light" → COLOR_TEXT
+- {{GLASS_OPACITY}}: If dark → "0.04-0.08". If light → "0.02-0.04"
 
 ## Step 2: SVG Generation (Gemini via OpenRouter)
 
