@@ -665,7 +665,9 @@ function buildFinalSvg(innerContent, brandProfile, slideNum, totalSlides) {
       <feColorMatrix type="saturate" values="0"/>
     </filter>`;
 
-  const grainOverlay = `  <rect width="${width}" height="${height}" filter="url(#grain)" opacity="0.03"/>`;
+  const isLightMode = brandProfile.visual?.designMode === 'light';
+  const grainOpacity = isLightMode ? 0.06 : 0.03;
+  const grainOverlay = `  <rect width="${width}" height="${height}" filter="url(#grain)" opacity="${grainOpacity}"/>`;
 
   // --- Header & Footer -------------------------------------------------------
   const headerXml = buildHeaderXml(brandProfile, fontPrimary, textColor);
