@@ -1,110 +1,284 @@
 ---
 name: carousel:backgrounds
-description: Generate premium branded background images for your carousel slides using AI. Creates hero and content backgrounds that match your brand identity.
+description: Generate premium branded background images for your carousel slides using Gemini image generation. Builds prompts dynamically from your brand-profile.json background preferences.
 ---
 
 # Background Generator
 
-Generate beautiful, branded background images for your carousels. These get embedded into every slide as the base layer, replacing flat colors with rich, textured backgrounds.
+Generate premium branded background images using Gemini's image generation. Prompts are built dynamically from the background preferences in `brand-profile.json` — style, intensity, hero drama level, and center cleanliness all shape the final prompt.
 
-## How It Works
+## Pre-flight
 
-1. Read `brand-profile.json` for brand colors and design mode
-2. Use Gemini via OpenRouter to generate TWO background images:
-   - **Hero background** (slide 1) — more dramatic, eye-catching
-   - **Content background** (slides 2+) — subtler, lets content breathe
-3. Save as PNGs in `./brand-assets/backgrounds/`
-4. Update brand-profile.json to reference them
+1. Read `brand-profile.json` for the full profile. Key fields:
+   - `visual.background.style` — `"geometric"` | `"mesh"` | `"textured"` | `"minimal"` | `"upload"`
+   - `visual.background.intensity` — `"subtle"` | `"moderate"` | `"bold"`
+   - `visual.background.heroDramatic` — `"minimal"` | `"moderate"` | `"bold"`
+   - `visual.background.contentVariant` — `"same"` | `"subtler"` | `"plain"`
+   - `visual.background.centerClean` — `true` | `false`
+   - `visual.background.color` — base/fallback color
+   - `visual.colors.accent` — accent color
+   - `visual.designMode` — `"dark"` | `"light"`
+   - `visual.canvas` — dimensions and safe zones
+2. Check for Google API key: look for `GEMINI_API_KEY` or `DEFAULT_GEMINI_KEY` in environment or `backend/.env`
+3. If no key found, ask the user for one
 
-## Background Generation
+## Upload-Your-Own Flow
 
-### Step 1: Prepare the prompt
+If `visual.background.style` is `"upload"`:
+- The user already provided file paths during `/carousel:setup`
+- Check that `visual.background.heroImage` and `visual.background.contentImage` paths exist
+- If paths are set and files exist, confirm: "Your uploaded backgrounds are already configured. Run `/carousel:generate` to use them."
+- If paths are missing, ask the user for hero and content background file paths (PNG/JPG)
+- Copy files to `./brand-assets/backgrounds/hero-bg.png` and `content-bg.png`
+- Update `brand-profile.json` with the paths
+- Skip all Gemini generation — done
 
-Build a Gemini image generation prompt based on the brand profile:
+## Prompt Builder System
 
-For **dark mode** brands:
+For generated styles (`"geometric"`, `"mesh"`, `"textured"`, `"minimal"`), build the Gemini prompt dynamically from brand profile values.
+
+### Base Prompt Template
+
+Every prompt starts with this structure. All `{values}` come from brand-profile.json:
+
 ```
-Generate a premium dark background image for a social media carousel slide.
-Dimensions: 1080x1350 pixels.
-Primary color: {background_color} (e.g., #0A0A0A)
-Accent color: {accent_color} (e.g., #FF4D4D)
+Generate a premium abstract background for a social media carousel {slide_type} slide.
 
-Style: [HERO variant]
-- Subtle gradient from the primary dark color
-- A gentle radial glow of the accent color at ~10-15% opacity, positioned at top-center
-- Subtle noise/grain texture throughout
-- NO text, NO logos, NO objects — pure abstract background
-- The top 280px should be slightly darker (logo zone)
-- The bottom 250px should have a subtle horizontal line or gradient shift (footer zone)
-- Premium, moody, sophisticated — think Apple keynote stage lighting
+DIMENSIONS: {canvas.width}x{canvas.height} pixels (portrait orientation)
 
-[CONTENT variant]
-- Same dark base but MORE subtle than hero
-- Very gentle accent color presence (~5% opacity glow)
-- Consistent noise/grain texture
-- Designed to let text content be the focus
-- Same top/bottom zone treatment
-```
+COLOR PALETTE:
+- Base color: {background.color} (this should dominate the image)
+- Accent color: {colors.accent}
+- Design mode: {designMode}
 
-For **light mode** brands:
-```
-Generate a premium light background image for a social media carousel slide.
-Dimensions: 1080x1350 pixels.
-Primary color: {background_color} (e.g., #f5f4ed)
-Accent color: {accent_color} (e.g., #d97757)
+{style_block}
 
-Style: [HERO variant]
-- Warm, textured paper-like surface in the primary color
-- Subtle accent color warmth radiating from one corner (~8-12% opacity)
-- Fine grain/noise texture for premium paper feel
-- NO text, NO logos, NO objects — pure abstract background
-- Slight vignette at edges (darker by 3-5%)
-- The top 280px may have a slightly different tonal value (logo zone)
-- Premium, editorial, refined — think luxury magazine page
+{intensity_block}
 
-[CONTENT variant]
-- Same warm base but even more subtle
-- Minimal accent color presence
-- Consistent fine texture
-- Clean canvas that lets serif typography shine
-- Same top/bottom zone treatment
-```
+{center_block}
 
-### Step 2: Generate via Gemini
+{drama_block}
 
-Use Gemini's image generation through OpenRouter. Call the API with the prompt above.
+{design_mode_block}
 
-**If Gemini image generation is not available via OpenRouter**, fall back to:
-
-1. **Ask Claude to generate SVG backgrounds** — Claude can create rich SVG backgrounds with:
-   - Multiple layered gradients (radial + linear)
-   - SVG noise via `<feTurbulence>` with higher base frequency and stronger opacity
-   - Subtle geometric patterns (dots, lines, mesh) using `<pattern>`
-   - Vignette effect via radial gradient overlay
-   - Paper texture simulation
-
-   Generate the SVG, then save it. post-process.mjs already supports SVG backgrounds.
-
-2. **Ask the user to provide their own** — "Upload a background image (PNG/JPG) to `./brand-assets/backgrounds/hero-bg.png`"
-
-### Step 3: Save backgrounds
-
-Save generated backgrounds to:
-```
-./brand-assets/backgrounds/
-├── hero-bg.png (or .svg)
-└── content-bg.png (or .svg)
+ABSOLUTE RULES:
+- NO text of any kind
+- NO logos or symbols
+- NO objects or recognizable shapes
+- Pure abstract background art only
+- Professional quality, not AI-slop
+- Must work as a background with text overlaid on top
 ```
 
-### Step 4: Update brand-profile.json
+### Style Blocks
 
-Update the background paths:
+Insert the matching block based on `visual.background.style`:
+
+**geometric:**
+```
+STYLE: GEOMETRIC
+Clean diagonal bands, parallel lines, solid edges. Architectural precision. NOT blurry.
+Think Stripe.com hero. Sharp angles, clean intersections, mathematical feel.
+Use the accent color for select geometric elements against the base color.
+Bands and lines should feel intentional and structured, not random.
+```
+
+**mesh:**
+```
+STYLE: MESH GRADIENT
+Smooth flowing gradient pools with large blur radius. Organic transitions.
+Think Apple Music. Soft color pools that blend seamlessly into each other.
+The accent color creates warm/cool pools against the base color.
+No hard edges — everything should feel like watercolor or aurora borealis.
+Subtle grain texture across the surface for premium tactile feel.
+```
+
+**textured:**
+```
+STYLE: TEXTURED
+Fine noise/grain, paper-like surface, tactile. Think luxury stationery or editorial magazine.
+The surface should feel physical — like premium card stock or handmade paper.
+Accent color appears as very subtle tonal shifts, not distinct shapes.
+Grain should be fine and uniform, not chunky or digital-looking.
+```
+
+**minimal:**
+```
+STYLE: MINIMAL
+Almost entirely base color. One very subtle accent wash in one corner.
+Think corporate clean. The background should almost disappear behind content.
+Maximum restraint — if in doubt, make it more subtle.
+Accent color at most a gentle wash, never a distinct shape or gradient.
+```
+
+### Intensity Blocks
+
+Insert based on `visual.background.intensity`:
+
+**subtle:**
+```
+ACCENT INTENSITY: SUBTLE
+Accent color covers max 10-15% of the image area. At edges and corners only.
+The base color should dominate 85-90% of the visible area.
+Accent presence should be barely noticeable — a whisper, not a statement.
+```
+
+**moderate:**
+```
+ACCENT INTENSITY: MODERATE
+Accent color covers 20-30% of the image area. Visible but balanced with base.
+Clear brand presence without overwhelming the content areas.
+The accent should feel intentional but not dominant.
+```
+
+**bold:**
+```
+ACCENT INTENSITY: BOLD
+Accent color covers 30-50% of the image area. Strong brand presence.
+The accent should make a statement while still leaving readable areas.
+Bold does not mean chaotic — keep it structured and premium.
+```
+
+### Center Clean Block
+
+Insert based on `visual.background.centerClean`:
+
+**true (recommended):**
+```
+CENTER ZONE: CLEAN
+The CENTER of the image (roughly middle 60%) must be CLEANER and more subtle.
+This is where text content will be placed — readability is critical.
+Push all color action, gradients, and visual interest to the EDGES and CORNERS.
+Think of the background as a frame — color wraps the edges, the center breathes.
+Safe zone for content: x:{canvas.safeXMin}-{canvas.safeXMax}, y:{canvas.contentStart}-{canvas.footerStart}
+```
+
+**false:**
+```
+CENTER ZONE: OPEN
+The gradient and visual elements can flow through the center of the image.
+Still ensure enough contrast for text readability, but the composition is free-form.
+Content will be overlaid with text shadows or backing shapes if needed.
+```
+
+### Drama Block (Hero vs Content)
+
+For the **hero slide**, insert based on `visual.background.heroDramatic`:
+
+**minimal:**
+```
+DRAMA LEVEL: MINIMAL
+This is the hero/opening slide but keep it restrained.
+Subtle accent presence — almost like a content slide with slightly more warmth.
+```
+
+**moderate:**
+```
+DRAMA LEVEL: MODERATE
+This is the hero/opening slide — more visual impact than content slides.
+Visible gradient or pattern presence, but still clean and professional.
+Top 20% can have accent color presence (logo area). Bottom 20% can have subtle warmth (footer area).
+```
+
+**bold:**
+```
+DRAMA LEVEL: BOLD
+This is the hero/opening slide — make it dramatic and eye-catching.
+Strong accent color presence. This slide should stop the scroll.
+Still keep content areas readable, but the overall impression should be bold and premium.
+```
+
+For the **content slide**, adapt based on `visual.background.contentVariant`:
+
+**same:**
+```
+This is a content slide. Use the SAME visual treatment as the hero slide.
+Maintain consistent intensity and style across all slides.
+```
+
+**subtler:**
+```
+This is a CONTENT slide — text, data, and visuals need to be clearly readable.
+Much subtler than the hero slide. Reduce accent presence by ~50%.
+The center must be very clean. Accent color only at the far edges, very soft.
+Think: premium stationery, not a poster.
+```
+
+**plain:**
+```
+This is a CONTENT slide with PLAIN background.
+Use almost entirely the base color. Minimal to no accent color.
+A solid, clean canvas for maximum content readability.
+At most, a barely-perceptible tonal variation to avoid feeling flat.
+```
+
+### Design Mode Block
+
+Insert based on `visual.designMode`:
+
+**dark:**
+```
+ATMOSPHERE: DARK MODE
+Dark, moody atmosphere. Deep shadows. The accent color glows against darkness.
+The base color is dark — accent elements should feel like they emit light.
+```
+
+**light:**
+```
+ATMOSPHERE: LIGHT MODE
+Warm, luminous atmosphere. The accent color creates soft pools of warmth on the light base.
+Clean and airy. The accent should feel like sunlight or a gentle wash.
+```
+
+## API Call
+
+Use the Google AI API directly (NOT OpenRouter — it does not support image generation):
+
+```python
+import urllib.request, json, base64
+
+API_KEY = "{gemini_api_key}"
+
+body = json.dumps({
+    "contents": [{"parts": [{"text": "{assembled_prompt}"}]}],
+    "generationConfig": {"responseModalities": ["IMAGE", "TEXT"]}
+})
+
+req = urllib.request.Request(
+    f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key={API_KEY}",
+    data=body.encode(),
+    headers={"Content-Type": "application/json"}
+)
+
+resp = urllib.request.urlopen(req, timeout=120)
+data = json.loads(resp.read())
+
+# Extract image from response
+for part in data["candidates"][0]["content"]["parts"]:
+    if "inlineData" in part:
+        img_bytes = base64.b64decode(part["inlineData"]["data"])
+        with open("output.png", "wb") as f:
+            f.write(img_bytes)
+```
+
+## Generation Flow
+
+1. **Build hero prompt**: Assemble the base template with style block + intensity block + center block + hero drama block + design mode block
+2. **Call Gemini** for hero background, save to `./brand-assets/backgrounds/hero-bg.png`
+3. **Build content prompt**: Same base template but swap the drama block for the content variant block
+4. **Call Gemini** for content background, save to `./brand-assets/backgrounds/content-bg.png`
+5. **Update `brand-profile.json`**:
+
 ```json
 {
   "visual": {
     "background": {
-      "style": "image",
-      "color": "#f5f4ed",
+      "style": "{original style}",
+      "intensity": "{original intensity}",
+      "heroDramatic": "{original heroDramatic}",
+      "contentVariant": "{original contentVariant}",
+      "centerClean": true,
+      "color": "{original color}",
       "heroImage": "./brand-assets/backgrounds/hero-bg.png",
       "contentImage": "./brand-assets/backgrounds/content-bg.png"
     }
@@ -112,66 +286,24 @@ Update the background paths:
 }
 ```
 
-## SVG Background Fallback
+6. **Show the user** the generated backgrounds (use Read tool to display the images)
+7. Ask if they're happy or want to regenerate
 
-If image generation isn't available, generate rich SVG backgrounds yourself. Here's what makes a good SVG background:
+## Regeneration with Feedback
 
-### Dark mode SVG background:
-```xml
-<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350">
-  <defs>
-    <filter id="noise">
-      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="4" stitchTiles="stitch"/>
-      <feColorMatrix type="saturate" values="0"/>
-    </filter>
-    <radialGradient id="glow" cx="50%" cy="30%" r="60%">
-      <stop offset="0%" stop-color="{accent}" stop-opacity="0.12"/>
-      <stop offset="60%" stop-color="{accent}" stop-opacity="0.03"/>
-      <stop offset="100%" stop-color="{bg_color}" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="vignette" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#000" stop-opacity="0.15"/>
-      <stop offset="20%" stop-color="#000" stop-opacity="0"/>
-      <stop offset="80%" stop-color="#000" stop-opacity="0"/>
-      <stop offset="100%" stop-color="#000" stop-opacity="0.2"/>
-    </linearGradient>
-  </defs>
-  <rect width="1080" height="1350" fill="{bg_color}"/>
-  <rect width="1080" height="1350" fill="url(#glow)"/>
-  <rect width="1080" height="1350" filter="url(#noise)" opacity="0.08"/>
-  <rect width="1080" height="1350" fill="url(#vignette)"/>
-</svg>
-```
+If the user doesn't like the result, ask what they'd change. Common feedback and how to modify the prompt:
 
-### Light mode SVG background:
-```xml
-<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350">
-  <defs>
-    <filter id="paper">
-      <feTurbulence type="fractalNoise" baseFrequency="1.2" numOctaves="5" stitchTiles="stitch"/>
-      <feColorMatrix type="saturate" values="0"/>
-    </filter>
-    <radialGradient id="warmth" cx="70%" cy="20%" r="70%">
-      <stop offset="0%" stop-color="{accent}" stop-opacity="0.08"/>
-      <stop offset="100%" stop-color="{bg_color}" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="vignette" cx="50%" cy="50%" r="70%">
-      <stop offset="60%" stop-color="{bg_color}" stop-opacity="0"/>
-      <stop offset="100%" stop-color="#000" stop-opacity="0.04"/>
-    </radialGradient>
-  </defs>
-  <rect width="1080" height="1350" fill="{bg_color}"/>
-  <rect width="1080" height="1350" fill="url(#warmth)"/>
-  <rect width="1080" height="1350" filter="url(#paper)" opacity="0.04"/>
-  <rect width="1080" height="1350" fill="url(#vignette)"/>
-</svg>
-```
+| User says | Prompt modification |
+|-----------|-------------------|
+| "more subtle" | Reduce intensity one level (bold→moderate, moderate→subtle) |
+| "less geometric" | Switch style block to mesh or minimal |
+| "more color" | Increase intensity one level |
+| "too busy" | Add "Reduce visual complexity by 50%. Fewer elements, more negative space." |
+| "too dark" | Add "Lighten the base color by 15-20%. More luminosity overall." |
+| "too flat" | Add "More depth and dimension. Subtle shadow layers and tonal variation." |
+| "center isn't clean enough" | Reinforce: "The center 60% must be ALMOST SOLID base color. Push ALL visual elements to the outer 20% edges." |
+| Custom feedback | Append the user's exact words as an additional instruction block |
 
-These use multiple layers: base color → accent glow → noise texture → vignette. Much richer than a single flat rect.
+After modifying the prompt, regenerate and replace the files. The brand-profile.json values stay the same unless the user explicitly wants to change their preferences.
 
-## After Generation
-
-Tell the user:
-- "Backgrounds generated and saved. All future carousels will use these."
-- "Run `/carousel:generate` to see them in action."
-- "Run `/carousel:backgrounds` again anytime to regenerate."
+Tell the user: "Run `/carousel:backgrounds` again anytime to regenerate. Or provide your own PNGs at `./brand-assets/backgrounds/hero-bg.png` and `content-bg.png`."

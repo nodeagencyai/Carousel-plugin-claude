@@ -442,9 +442,29 @@ function mixColors(hex1, hex2, ratio) {
 // Step 6a — Header zone (logo / brand name)
 // ---------------------------------------------------------------------------
 
-function buildHeaderXml(brandProfile, fontPrimary, textColor) {
-  const logoPath = brandProfile.brand?.logo?.path;
+function buildHeaderXml(brandProfile, fontPrimary, textColor, slideNum) {
+  // New schema: brand.frame.logo — fallback to old brand.brand.logo
+  const frameLogo = brandProfile.brand?.frame?.logo;
+  const legacyLogo = brandProfile.brand?.logo;
+  const logoPath = frameLogo?.path || legacyLogo?.path;
+  const maxH = frameLogo?.maxHeight || legacyLogo?.maxHeight || 60;
+  const placement = frameLogo?.placement || 'top-left';
+  const showOn = frameLogo?.showOn || 'all';
   const brandName = brandProfile.name;
+
+  // If showOn is "hero", skip logo on all slides except slide 1
+  if (showOn === 'hero' && slideNum > 1) return '';
+
+  // Placement coordinates
+  let logoX, textAnchor, svgTranslateX;
+  if (placement === 'top-center') {
+    logoX = 540; textAnchor = 'middle'; svgTranslateX = 440;
+  } else if (placement === 'top-right') {
+    logoX = 1030; textAnchor = 'end'; svgTranslateX = 880;
+  } else {
+    // top-left (default)
+    logoX = 50; textAnchor = 'start'; svgTranslateX = 50;
+  }
 
   let headerXml = '';
 
@@ -457,24 +477,23 @@ function buildHeaderXml(brandProfile, fontPrimary, textColor) {
         // Namespace logo IDs
         logoSvg = logoSvg.replace(/id="([^"]+)"/g, 'id="logo-$1"');
         logoSvg = logoSvg.replace(/url\(#([^)]+)\)/g, 'url(#logo-$1)');
-        headerXml = `  <g id="header" transform="translate(50, 40) scale(0.5)">\n    ${logoSvg}\n  </g>`;
+        headerXml = `  <g id="header" transform="translate(${svgTranslateX}, 40) scale(0.5)">\n    ${logoSvg}\n  </g>`;
       } else {
         // PNG/JPG — embed as base64
         const imgBuffer = readFileSync(resolvedPath);
         const base64 = imgBuffer.toString('base64');
         const ext = logoPath.split('.').pop().toLowerCase();
         const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
-        const maxH = brandProfile.brand?.logo?.maxHeight || 60;
-        headerXml = `  <image href="data:${mime};base64,${base64}" x="50" y="40" height="${maxH}" preserveAspectRatio="xMinYMid meet"/>`;
+        headerXml = `  <image href="data:${mime};base64,${base64}" x="${logoX}" y="40" height="${maxH}" preserveAspectRatio="xMinYMid meet"/>`;
       }
     } catch {
       // Logo file not found — fall back to text
       if (brandName) {
-        headerXml = `  <text x="60" y="90" font-family="${fontPrimary}, sans-serif" font-size="28" fill="${textColor}" opacity="0.5">${escapeXmlText(brandName)}</text>`;
+        headerXml = `  <text x="${logoX}" y="90" text-anchor="${textAnchor}" font-family="${fontPrimary}, sans-serif" font-size="28" fill="${textColor}" opacity="0.5">${escapeXmlText(brandName)}</text>`;
       }
     }
   } else if (brandName) {
-    headerXml = `  <text x="60" y="90" font-family="${fontPrimary}, sans-serif" font-size="28" fill="${textColor}" opacity="0.5">${escapeXmlText(brandName)}</text>`;
+    headerXml = `  <text x="${logoX}" y="90" text-anchor="${textAnchor}" font-family="${fontPrimary}, sans-serif" font-size="28" fill="${textColor}" opacity="0.5">${escapeXmlText(brandName)}</text>`;
   }
 
   return headerXml;
@@ -486,24 +505,43 @@ function buildHeaderXml(brandProfile, fontPrimary, textColor) {
 
 function buildFooterXml(brandProfile, slideNum, totalSlides, fontSecondary, captionColor, accentColor) {
   const footerY = brandProfile.visual?.canvas?.footerStart || 1100;
-  const footerText = brandProfile.brand?.footer?.text;
-  const slideCounter = brandProfile.brand?.footer?.slideCounter !== false;
-  const heroCta = brandProfile.brand?.footer?.heroCta;
   const width = brandProfile.visual?.canvas?.width || 1080;
+
+  // New schema: brand.frame.footer — fallback to old brand.brand.footer
+  const frameFooter = brandProfile.brand?.frame?.footer;
+  const legacyFooter = brandProfile.brand?.footer;
+
+  const footerText = frameFooter?.text ?? legacyFooter?.text;
+  const textPlacement = frameFooter?.textPlacement || 'bottom-right';
+  const slideCounter = frameFooter?.slideCounter ?? (legacyFooter?.slideCounter !== false);
+  const counterPlacement = frameFooter?.counterPlacement || (textPlacement === 'bottom-right' ? 'bottom-left' : 'bottom-right');
+  const heroCta = frameFooter?.heroCta ?? legacyFooter?.heroCta;
+  const dividerStyle = frameFooter?.dividerStyle || 'thin';
 
   let footerXml = '';
 
-  // Divider line
-  footerXml += `\n  <line x1="140" y1="${footerY + 20}" x2="920" y2="${footerY + 20}" stroke="${accentColor}" stroke-opacity="0.15" stroke-width="0.5"/>`;
-
-  // Footer text — bottom right
-  if (footerText) {
-    footerXml += `\n  <text x="900" y="${footerY + 70}" text-anchor="end" font-family="${fontSecondary}, sans-serif" font-size="16" fill="${captionColor}" opacity="0.6">${escapeXmlText(footerText)}</text>`;
+  // Divider line (respects dividerStyle)
+  if (dividerStyle !== 'none') {
+    const strokeWidth = dividerStyle === 'thick' ? '2' : '0.5';
+    footerXml += `\n  <line x1="140" y1="${footerY + 20}" x2="920" y2="${footerY + 20}" stroke="${accentColor}" stroke-opacity="0.15" stroke-width="${strokeWidth}"/>`;
   }
 
-  // Slide counter — bottom left
+  // Text placement coordinates
+  const textRightX = 900; const textRightAnchor = 'end';
+  const textLeftX = 140; const textLeftAnchor = 'start';
+
+  // Footer text
+  if (footerText) {
+    const ftX = textPlacement === 'bottom-left' ? textLeftX : textRightX;
+    const ftAnchor = textPlacement === 'bottom-left' ? textLeftAnchor : textRightAnchor;
+    footerXml += `\n  <text x="${ftX}" y="${footerY + 70}" text-anchor="${ftAnchor}" font-family="${fontSecondary}, sans-serif" font-size="16" fill="${captionColor}" opacity="0.6">${escapeXmlText(footerText)}</text>`;
+  }
+
+  // Slide counter — placed opposite to text
   if (slideCounter) {
-    footerXml += `\n  <text x="140" y="${footerY + 70}" font-family="${fontSecondary}, sans-serif" font-size="16" fill="${captionColor}" opacity="0.6">${slideNum} / ${totalSlides}</text>`;
+    const scX = counterPlacement === 'bottom-right' ? textRightX : textLeftX;
+    const scAnchor = counterPlacement === 'bottom-right' ? textRightAnchor : textLeftAnchor;
+    footerXml += `\n  <text x="${scX}" y="${footerY + 70}" text-anchor="${scAnchor}" font-family="${fontSecondary}, sans-serif" font-size="16" fill="${captionColor}" opacity="0.6">${slideNum} / ${totalSlides}</text>`;
   }
 
   // Hero CTA — slide 1 only, centered
@@ -658,19 +696,8 @@ function buildFinalSvg(innerContent, brandProfile, slideNum, totalSlides) {
     ? `@import url('https://fonts.googleapis.com/css2?family=${googleFonts}:wght@400;500;600;700;800;900&amp;display=swap');`
     : '';
 
-  // --- Grain texture filter ---------------------------------------------------
-  const grainFilter = `
-    <filter id="grain" x="0" y="0" width="100%" height="100%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
-      <feColorMatrix type="saturate" values="0"/>
-    </filter>`;
-
-  const isLightMode = brandProfile.visual?.designMode === 'light';
-  const grainOpacity = isLightMode ? 0.06 : 0.03;
-  const grainOverlay = `  <rect width="${width}" height="${height}" filter="url(#grain)" opacity="${grainOpacity}"/>`;
-
   // --- Header & Footer -------------------------------------------------------
-  const headerXml = buildHeaderXml(brandProfile, fontPrimary, textColor);
+  const headerXml = buildHeaderXml(brandProfile, fontPrimary, textColor, slideNum);
   const footerXml = buildFooterXml(brandProfile, slideNum, totalSlides, fontSecondary, captionColor, accentColor);
 
   // --- Assemble -------------------------------------------------------------
@@ -686,11 +713,10 @@ function buildFinalSvg(innerContent, brandProfile, slideNum, totalSlides) {
     </style>
     <linearGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="0%">
 ${stopsXml}
-    </linearGradient>${backgroundGradientDefs}${grainFilter}
+    </linearGradient>${backgroundGradientDefs}
   </defs>
 
 ${backgroundXml}
-${grainOverlay}
 ${headerXml}
 
   <g id="content">

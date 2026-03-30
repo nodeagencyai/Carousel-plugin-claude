@@ -14,12 +14,12 @@ Light background, thin fonts, maximum whitespace, muted earth tones.
       "gradient": { "from": "#2D2D2D", "to": "#6B6B6B" }
     },
     "fonts": { "primary": "Space Grotesk", "secondary": "Inter", "display": null },
-    "background": { "style": "solid_light", "color": "#FAFAF8", "heroImage": null, "contentImage": null },
+    "background": { "style": "solid_light", "color": "#FAFAF8", "heroImage": null, "contentImage": null, "intensity": "subtle", "heroDramatic": "minimal", "contentVariant": "plain", "centerClean": true },
     "canvas": { "width": 1080, "height": 1350, "headerHeight": 280, "contentStart": 300, "footerStart": 1100, "safeXMin": 140, "safeXMax": 920 },
     "designMode": "light"
   },
   "content": { "density": "minimal", "tone": "professional", "frameworks": "auto", "slideCount": { "default": 5, "range": [3, 10] } },
-  "brand": { "description": "", "audience": "", "voice": [], "industry": "" }
+  "brand": { "description": "", "audience": "", "voice": [], "industry": "", "frame": { "logo": { "placement": "top-left", "showOn": "all", "maxHeight": 50 }, "footer": { "text": "", "textPlacement": "bottom-right", "slideCounter": false, "dividerStyle": "thin", "heroCta": null } } }
 }
 ```
 
@@ -37,12 +37,12 @@ Dark background, heavy sans-serif, high contrast, vibrant accent.
       "gradient": { "from": "#FF4D4D", "to": "#FF8C8C" }
     },
     "fonts": { "primary": "Outfit", "secondary": "Inter", "display": null },
-    "background": { "style": "solid_dark", "color": "#0A0A0A", "heroImage": null, "contentImage": null },
+    "background": { "style": "solid_dark", "color": "#0A0A0A", "heroImage": null, "contentImage": null, "intensity": "bold", "heroDramatic": "bold", "contentVariant": "subtler", "centerClean": true },
     "canvas": { "width": 1080, "height": 1350, "headerHeight": 280, "contentStart": 300, "footerStart": 1100, "safeXMin": 140, "safeXMax": 920 },
     "designMode": "dark"
   },
   "content": { "density": "balanced", "tone": "bold", "frameworks": "auto", "slideCount": { "default": 5, "range": [3, 10] } },
-  "brand": { "description": "", "audience": "", "voice": [], "industry": "" }
+  "brand": { "description": "", "audience": "", "voice": [], "industry": "", "frame": { "logo": { "placement": "top-left", "showOn": "all", "maxHeight": 60 }, "footer": { "text": "", "textPlacement": "bottom-right", "slideCounter": true, "dividerStyle": "thick", "heroCta": "Swipe for more \u2192" } } }
 }
 ```
 
@@ -60,12 +60,12 @@ Dark background, serif headlines for sophistication, magazine aesthetic.
       "gradient": { "from": "#C9A96E", "to": "#E8D5A8" }
     },
     "fonts": { "primary": "Playfair Display", "secondary": "Source Sans 3", "display": null },
-    "background": { "style": "solid_dark", "color": "#1A1A1A", "heroImage": null, "contentImage": null },
+    "background": { "style": "solid_dark", "color": "#1A1A1A", "heroImage": null, "contentImage": null, "intensity": "moderate", "heroDramatic": "moderate", "contentVariant": "subtler", "centerClean": true },
     "canvas": { "width": 1080, "height": 1350, "headerHeight": 280, "contentStart": 300, "footerStart": 1100, "safeXMin": 140, "safeXMax": 920 },
     "designMode": "dark"
   },
   "content": { "density": "balanced", "tone": "professional", "frameworks": "auto", "slideCount": { "default": 5, "range": [3, 10] } },
-  "brand": { "description": "", "audience": "", "voice": [], "industry": "" }
+  "brand": { "description": "", "audience": "", "voice": [], "industry": "", "frame": { "logo": { "placement": "top-left", "showOn": "all", "maxHeight": 50 }, "footer": { "text": "", "textPlacement": "bottom-right", "slideCounter": true, "dividerStyle": "thin", "heroCta": "Swipe for more \u2192" } } }
 }
 ```
 
@@ -83,12 +83,12 @@ Light background, clean sans-serif, structured and professional, blue accent.
       "gradient": { "from": "#2563EB", "to": "#60A5FA" }
     },
     "fonts": { "primary": "Plus Jakarta Sans", "secondary": "Inter", "display": null },
-    "background": { "style": "solid_light", "color": "#F8F9FA", "heroImage": null, "contentImage": null },
+    "background": { "style": "solid_light", "color": "#F8F9FA", "heroImage": null, "contentImage": null, "intensity": "subtle", "heroDramatic": "moderate", "contentVariant": "plain", "centerClean": true },
     "canvas": { "width": 1080, "height": 1350, "headerHeight": 280, "contentStart": 300, "footerStart": 1100, "safeXMin": 140, "safeXMax": 920 },
     "designMode": "light"
   },
   "content": { "density": "balanced", "tone": "professional", "frameworks": "auto", "slideCount": { "default": 5, "range": [3, 10] } },
-  "brand": { "description": "", "audience": "", "voice": [], "industry": "" }
+  "brand": { "description": "", "audience": "", "voice": [], "industry": "", "frame": { "logo": { "placement": "top-left", "showOn": "all", "maxHeight": 60 }, "footer": { "text": "", "textPlacement": "bottom-right", "slideCounter": true, "dividerStyle": "thin", "heroCta": null } } }
 }
 ```
 
@@ -106,11 +106,11 @@ Dark background, monospace accents, bright neon accent, cyberpunk feel.
       "gradient": { "from": "#00FF88", "to": "#00CC6A" }
     },
     "fonts": { "primary": "JetBrains Mono", "secondary": "Inter", "display": null },
-    "background": { "style": "solid_dark", "color": "#0D0D0D", "heroImage": null, "contentImage": null },
+    "background": { "style": "solid_dark", "color": "#0D0D0D", "heroImage": null, "contentImage": null, "intensity": "moderate", "heroDramatic": "bold", "contentVariant": "subtler", "centerClean": true },
     "canvas": { "width": 1080, "height": 1350, "headerHeight": 280, "contentStart": 300, "footerStart": 1100, "safeXMin": 140, "safeXMax": 920 },
     "designMode": "dark"
   },
   "content": { "density": "balanced", "tone": "casual", "frameworks": "auto", "slideCount": { "default": 5, "range": [3, 10] } },
-  "brand": { "description": "", "audience": "", "voice": [], "industry": "" }
+  "brand": { "description": "", "audience": "", "voice": [], "industry": "", "frame": { "logo": { "placement": "top-left", "showOn": "all", "maxHeight": 50 }, "footer": { "text": "", "textPlacement": "bottom-right", "slideCounter": true, "dividerStyle": "thin", "heroCta": "Swipe \u2192" } } }
 }
 ```

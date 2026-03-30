@@ -74,35 +74,7 @@ Ask these questions ONE AT A TIME:
    - Also derive: text color (usually white on dark, or dark on light), caption color (muted version)
    - Generate a gradient from the accent color (lighter/darker variants)
 
-3. **Background** — "How do you want your slide backgrounds?"
-   Present three clear options:
-
-   **Option A: Upload your own** — User provides a path to a PNG/JPG image file. Ask if they want separate backgrounds for the hero slide (slide 1) and content slides (slides 2+), or the same for all. Save the file path(s) in brand-profile.json.
-
-   **Option B: Generate a gradient** — Create a gradient background SVG from their brand colors. Offer styles:
-   - Linear dark-to-darker (e.g., primary color at 80% darkness → 95% darkness)
-   - Radial glow (subtle accent color glow from center on dark base)
-   - Diagonal sweep (accent color at low opacity sweeping corner to corner)
-
-   Generate the SVG background file(s), save to `./brand-assets/backgrounds/hero-bg.svg` and `content-bg.svg`, and reference in brand-profile.json. Example gradient SVG:
-   ```xml
-   <svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350">
-     <defs>
-       <radialGradient id="glow" cx="50%" cy="40%" r="60%">
-         <stop offset="0%" stop-color="{accent}" stop-opacity="0.15"/>
-         <stop offset="100%" stop-color="{primary}" stop-opacity="0"/>
-       </radialGradient>
-     </defs>
-     <rect width="1080" height="1350" fill="{primary_darkened}"/>
-     <rect width="1080" height="1350" fill="url(#glow)"/>
-   </svg>
-   ```
-
-   **Option C: AI-generate a branded background** — Call Gemini via OpenRouter to generate a custom textured/patterned background based on brand identity. Prompt Gemini to create a subtle, non-distracting SVG background with brand-appropriate textures (geometric patterns, noise, grain, mesh gradients). Save generated SVGs to `./brand-assets/backgrounds/`. Generate both hero and content variants.
-
-   For all options, also ask: "Same background for all slides, or different for the opening slide vs. content slides?"
-
-4. **Platform / Aspect ratio** — "What platform are you primarily designing for?"
+3. **Platform / Aspect ratio** — "What platform are you primarily designing for?"
    - Instagram Carousel (1080x1350) — default
    - Instagram Square (1080x1080)
    - LinkedIn Post (1200x627)
@@ -116,7 +88,7 @@ Ask these questions ONE AT A TIME:
    - Stories: 1080x1920, safe y:200-1720, safe x:100-980
    - Presentation: 1920x1080, safe y:100-930, safe x:150-1770
 
-5. **Fonts** — "What fonts should we use?"
+4. **Fonts** — "What fonts should we use?"
    - Primary font (headlines) — Google Font name or system font
    - Secondary font (body text) — Google Font name or system font
    - Suggest popular pairings if they're unsure: Space Grotesk + Inter, Montserrat + Open Sans, Poppins + Nunito
@@ -125,28 +97,11 @@ Ask these questions ONE AT A TIME:
    - If yes: save as `visual.fonts.display` in brand-profile.json
    - If no: hero slides use the primary font (default — `visual.fonts.display` stays `null`)
 
-6. **Logo** (optional) — "Do you have a logo file (SVG or PNG) to include in the header area?"
+5. **Logo** (optional) — "Do you have a logo file (SVG or PNG) to include in the header area?"
    - If yes, note the file path
    - If no, skip — slides will use full header space
 
-### Branding Frame
-
-After collecting the logo, ask these additional branding questions:
-
-7. **Footer text** — "What URL or social handle should appear in the slide footer?"
-   - Examples: "anthropic.com", "@nodeagency", "yourcompany.io"
-   - This appears bottom-right on every slide
-   - If blank, no footer text
-
-8. **Hero CTA** — "What call-to-action text should appear on the first slide?"
-   - Default: "Swipe for more →"
-   - Or custom text
-   - Or none
-
-9. **Slide counter** — "Show slide numbers (1/5, 2/5) on each slide?"
-   - Yes (default) / No
-
-10. **Design mode** — "Do you prefer dark or light slides?"
+6. **Design mode** — "Do you prefer dark or light slides?"
    - **Dark mode** (default, recommended): Dark backgrounds with light text. Best for social media feeds.
      - Defaults: text=#FFFFFF, caption=#999999, primary=#1a1a1a
    - **Light mode**: Light backgrounds with dark text. Clean, minimal feel.
@@ -154,32 +109,109 @@ After collecting the logo, ask these additional branding questions:
    - Store the choice in `visual.designMode` ("dark" or "light")
    - Pre-fill color defaults based on the selection (user can still override in the Colors question)
 
+## Background Preferences
+
+Ask these questions to determine how backgrounds should be generated.
+
+7. **Hero intensity** — "How dramatic should the hero slide (slide 1) background be?"
+   - Minimal — almost flat, hint of accent in one corner
+   - Moderate — visible gradient or geometric elements, clean (recommended)
+   - Bold — strong accent presence, prominent shapes
+
+8. **Content slides** — "Same background for content slides, or different?"
+   - Same as hero
+   - Subtler version — cleaner for readability (recommended)
+   - Plain — solid base color only
+
+9. **Background style** — "What style of background?"
+   - Geometric — diagonal lines, clean bands, architectural (Stripe/Linear style)
+   - Mesh gradient — smooth blurred color pools (Apple/Figma style)
+   - Textured — noise, grain, paper feel (editorial/luxury)
+   - Minimal — solid color + subtle corner accent (clean/corporate)
+   - Upload my own — user provides PNG/JPG files
+
+10. **Accent intensity** — "How much accent color in the background?"
+    - Subtle (5-15% of area, edges only)
+    - Moderate (15-30%, visible presence)
+    - Bold (30-50%, strong brand presence)
+
+11. **Center clean** — "Keep the center clean for content readability?"
+    - Yes (recommended)
+    - No, gradient can flow through center
+
+If user chose "Upload my own" for style:
+- Ask for hero background file path (PNG/JPG)
+- Ask for content background file path (or same as hero)
+- Save paths to brand-profile.json
+
+## Branding Frame
+
+Configure the persistent branded elements that appear on every slide.
+
+12. **Logo placement** — "Where should your logo appear?"
+    - Top-left (default)
+    - Top-center
+    - Top-right
+    - No logo — use brand name text instead
+
+13. **Logo on every slide?** — "Show logo on all slides or hero only?"
+    - Every slide (default)
+    - Hero slide only
+
+14. **Footer text** — "What text should appear in the footer?"
+    - Website URL (e.g., "anthropic.com")
+    - Social handle (e.g., "@anthropic")
+    - Tagline
+    - None
+
+15. **Footer text placement** — "Where should footer text go?"
+    - Bottom-right (default)
+    - Bottom-left
+
+16. **Slide counter** — "Show slide numbers (1/5, 2/5)?"
+    - Yes (default)
+    - No
+
+17. **Slide counter placement** — opposite side of footer text
+    - If footer is bottom-right → counter bottom-left (default)
+    - If footer is bottom-left → counter bottom-right
+
+18. **Hero CTA** — "Call-to-action on first slide?"
+    - "Swipe for more →" (default)
+    - Custom text
+    - None
+
+19. **Divider line** — "Divider line above the footer?"
+    - Thin accent line (default — 0.5px in accent color)
+    - Thick accent (2px)
+    - None
+
 ## Stage 2: Content Style
 
-11. **Text density** — "How text-heavy should your carousels be?"
-   - Minimal: Big bold statements, few words, maximum visual impact
-   - Balanced: Mix of data points and narrative text (recommended)
-   - Dense: Data-heavy, lots of information, infographic style
+20. **Text density** — "How text-heavy should your carousels be?"
+    - Minimal: Big bold statements, few words, maximum visual impact
+    - Balanced: Mix of data points and narrative text (recommended)
+    - Dense: Data-heavy, lots of information, infographic style
 
-12. **Tone** — "What tone fits your brand?"
-   - Educational: Informative, teaching-focused
-   - Professional: Corporate, polished
-   - Casual: Friendly, conversational
-   - Bold: Provocative, attention-grabbing
+21. **Tone** — "What tone fits your brand?"
+    - Educational: Informative, teaching-focused
+    - Professional: Corporate, polished
+    - Casual: Friendly, conversational
+    - Bold: Provocative, attention-grabbing
 
-13. **Visual frameworks** — "Any preferred visual styles for your slides?"
-   - Show the options: data tables, bar charts, quadrant matrices, stacked layers, flow diagrams, or "auto" (let AI decide)
-   - Default to "auto" if unsure
+22. **Visual frameworks** — "Any preferred visual styles for your slides?"
+    - Show the options: data tables, bar charts, quadrant matrices, stacked layers, flow diagrams, or "auto" (let AI decide)
+    - Default to "auto" if unsure
 
 ## Stage 3: Brand DNA
 
-14. **Brand description** — "What does your brand do? (one sentence)"
+23. **Brand description** — "What does your brand do? (one sentence)"
 
-15. **Target audience** — "Who is your target audience?"
+24. **Target audience** — "Who is your target audience?"
 
-16. **Voice guidelines** (optional) — "Any specific brand voice rules? (e.g., 'never use exclamation marks', 'always back claims with data')"
+25. **Voice guidelines** (optional) — "Any specific brand voice rules? (e.g., 'never use exclamation marks', 'always back claims with data')"
 
-17. **Industry** — "What industry/niche are you in?"
+26. **Industry** — "What industry/niche are you in?"
 
 ## Output
 
@@ -198,8 +230,12 @@ After collecting all answers, generate the `brand-profile.json` file in the proj
     },
     "fonts": { "primary": "Inter", "secondary": "Inter", "display": null },
     "background": {
-      "style": "solid_dark",
-      "color": "#1a1a1a",
+      "style": "geometric",
+      "intensity": "moderate",
+      "heroDramatic": "moderate",
+      "contentVariant": "subtler",
+      "centerClean": true,
+      "color": "#f5f4ed",
       "heroImage": null,
       "contentImage": null
     },
@@ -222,24 +258,35 @@ After collecting all answers, generate the `brand-profile.json` file in the proj
     "audience": "...",
     "voice": [],
     "industry": "...",
-    "footer": {
-      "text": "anthropic.com",
-      "heroCta": "Swipe for more →",
-      "slideCounter": true
-    },
-    "logo": {
-      "path": "./assets/logo.svg",
-      "placement": "top-left",
-      "maxHeight": 60
+    "frame": {
+      "logo": {
+        "path": null,
+        "placement": "top-left",
+        "maxHeight": 60,
+        "showOn": "all"
+      },
+      "footer": {
+        "text": "anthropic.com",
+        "textPlacement": "bottom-right",
+        "slideCounter": true,
+        "counterPlacement": "bottom-left",
+        "heroCta": "Swipe for more →",
+        "dividerStyle": "thin"
+      }
     }
   }
 }
 ```
 
 When writing background choices:
-- **Option A (Upload)**: Set `visual.background.style` to `"image"`, store paths in `visual.background.heroImage` and/or `visual.background.contentImage`
-- **Option B (Gradient)**: Set `visual.background.style` to `"gradient"`, generate SVG files and store paths in `visual.background.heroImage` / `visual.background.contentImage`
-- **Option C (AI-generated)**: Set `visual.background.style` to `"ai_generated"`, generate SVG files and store paths in `visual.background.heroImage` / `visual.background.contentImage`
+- **Upload my own**: Set `visual.background.style` to `"upload"`, store paths in `visual.background.heroImage` and/or `visual.background.contentImage`
+- **Geometric / Mesh gradient / Textured / Minimal**: Set `visual.background.style` to the chosen style (`"geometric"`, `"mesh"`, `"textured"`, `"minimal"`), leave `heroImage` and `contentImage` as `null` until `/carousel:backgrounds` generates them
 - For all options, `visual.background.color` is the solid fallback color
+- `visual.background.intensity` maps to the accent intensity answer (`"subtle"`, `"moderate"`, `"bold"`)
+- `visual.background.heroDramatic` maps to the hero intensity answer (`"minimal"`, `"moderate"`, `"bold"`)
+- `visual.background.contentVariant` maps to the content slides answer (`"same"`, `"subtler"`, `"plain"`)
+- `visual.background.centerClean` maps to the center clean answer (`true` / `false`)
 
-Confirm the profile looks good, then tell the user they're ready to generate carousels with `/carousel:generate`.
+Note: The old `brand.footer` and `brand.logo` fields have been migrated to `brand.frame.footer` and `brand.frame.logo`. The `brand.frame.logo` now includes `showOn` ("all" or "hero") and the `brand.frame.footer` now includes `textPlacement`, `counterPlacement`, and `dividerStyle`.
+
+Confirm the profile looks good, then tell the user they're ready to generate carousels with `/carousel:generate`. If they chose a generated background style (not "upload"), remind them to run `/carousel:backgrounds` to generate their background images.
